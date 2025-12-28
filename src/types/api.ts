@@ -62,3 +62,30 @@ export interface TrendData {
   closed: number;
   winRate: number;
 }
+
+// Analytics response for dashboard
+export interface AnalyticsData {
+  total: number;
+  winRate: number;
+  avgConfidence: number;
+  bySector: Array<{ sector: string; count: number }>;
+  byInterest: Array<{ level: string; count: number }>;
+  bySentiment: Array<{ sentiment: string; count: number }>;
+}
+
+// Meeting detail response
+export interface MeetingDetail {
+  id: string;
+  clientName: string;
+  email: string;
+  phone: string;
+  meetingDate: string;
+  salesRep: string;
+  closed: boolean;
+  transcript: string;
+  llm_analysis?: {
+    id: string | null;
+    analysisJson: Analysis | null;
+    createdAt: string | null;
+  };
+}

@@ -1,4 +1,5 @@
 import UploadForm from '@/components/upload/UploadForm';
+import JobProcessor from '@/components/jobs/JobProcessor';
 import styles from './upload.module.css';
 
 export default function UploadPage() {
@@ -23,6 +24,9 @@ export default function UploadPage() {
 
         <UploadForm />
       </div>
+
+      {/* JobProcessor para monitorear el progreso de los jobs */}
+      <JobProcessor />
     </div>
   );
 }

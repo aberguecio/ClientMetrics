@@ -1,7 +1,8 @@
 import { db } from './index';
 import { salesMeetings, llmAnalysis, processingJobs, uploads } from './schema';
-import { eq, desc, and, sql, count, isNull } from 'drizzle-orm';
-import type { MetricsOverview, RepPerformance, CategoryDistribution, TrendData } from '@/types/api';
+import { eq, desc, and, sql, count, isNull, inArray } from 'drizzle-orm';
+import type { MetricsOverview, RepPerformance, CategoryDistribution, TrendData, AnalyticsData } from '@/types/api';
+import { calculatePercentage } from '../utils';
 
 /**
  * Get overall metrics overview
@@ -153,4 +154,123 @@ export async function getFailedJobsCount(): Promise<number> {
     .where(eq(processingJobs.status, 'failed'));
 
   return result[0]?.count || 0;
+}
+
+/**
+ * Get all meetings with analysis
+ */
+export async function getAllMeetingsWithAnalysis() {
+  const meetings = await db
+    .select({
+      id: salesMeetings.id,
+      clientName: salesMeetings.clientName,
+      email: salesMeetings.email,
+      phone: salesMeetings.phone,
+      meetingDate: salesMeetings.meetingDate,
+      salesRep: salesMeetings.salesRep,
+      closed: salesMeetings.closed,
+      transcript: salesMeetings.transcript,
+      createdAt: salesMeetings.createdAt,
+      updatedAt: salesMeetings.updatedAt,
+      analysisJson: llmAnalysis.analysisJson,
+    })
+    .from(salesMeetings)
+    .leftJoin(llmAnalysis, eq(salesMeetings.id, llmAnalysis.meetingId))
+    .orderBy(desc(salesMeetings.meetingDate));
+
+  return meetings;
+}
+
+/**
+ * Get meetings by specific IDs
+ */
+export async function getMeetingsByIds(ids: string[]) {
+  if (!ids || ids.length === 0) {
+    return [];
+  }
+
+  const meetings = await db
+    .select({
+      id: salesMeetings.id,
+      clientName: salesMeetings.clientName,
+      email: salesMeetings.email,
+      phone: salesMeetings.phone,
+      meetingDate: salesMeetings.meetingDate,
+      salesRep: salesMeetings.salesRep,
+      closed: salesMeetings.closed,
+      transcript: salesMeetings.transcript,
+      createdAt: salesMeetings.createdAt,
+      updatedAt: salesMeetings.updatedAt,
+      analysisJson: llmAnalysis.analysisJson,
+    })
+    .from(salesMeetings)
+    .leftJoin(llmAnalysis, eq(salesMeetings.id, llmAnalysis.meetingId))
+    .where(inArray(salesMeetings.id, ids))
+    .orderBy(desc(salesMeetings.meetingDate));
+
+  return meetings;
+}
+
+/**
+ * Calculate analytics from meetings data
+ */
+export function calculateAnalytics(meetings: any[]): AnalyticsData {
+  const total = meetings.length;
+  const closedCount = meetings.filter(m => m.closed).length;
+  const winRate = calculatePercentage(closedCount, total);
+
+  // Calculate average confidence from analysis
+  const meetingsWithAnalysis = meetings.filter(m => m.analysisJson?.confidence);
+  const avgConfidence = meetingsWithAnalysis.length > 0
+    ? meetingsWithAnalysis.reduce((sum, m) => sum + (m.analysisJson.confidence || 0), 0) / meetingsWithAnalysis.length
+    : 0;
+
+  // Group by sector
+  const sectorMap: Record<string, number> = {};
+  meetings.forEach(m => {
+    const sector = m.analysisJson?.sector || 'Sin analizar';
+    sectorMap[sector] = (sectorMap[sector] || 0) + 1;
+  });
+
+  const bySector = Object.entries(sectorMap).map(([sector, count]) => ({
+    sector,
+    count,
+  }));
+
+  // Group by interest level
+  const interestMap: Record<string, number> = {};
+  meetings.forEach(m => {
+    if (m.analysisJson?.interest_level) {
+      const level = m.analysisJson.interest_level;
+      interestMap[level] = (interestMap[level] || 0) + 1;
+    }
+  });
+
+  const byInterest = Object.entries(interestMap).map(([level, count]) => ({
+    level,
+    count,
+  }));
+
+  // Group by sentiment
+  const sentimentMap: Record<string, number> = {};
+  meetings.forEach(m => {
+    if (m.analysisJson?.sentiment) {
+      const sentiment = m.analysisJson.sentiment;
+      sentimentMap[sentiment] = (sentimentMap[sentiment] || 0) + 1;
+    }
+  });
+
+  const bySentiment = Object.entries(sentimentMap).map(([sentiment, count]) => ({
+    sentiment,
+    count,
+  }));
+
+  return {
+    total,
+    winRate,
+    avgConfidence,
+    bySector,
+    byInterest,
+    bySentiment,
+  };
 }

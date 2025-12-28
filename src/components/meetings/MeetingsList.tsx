@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { formatDate } from '@/lib/utils';
@@ -27,11 +28,85 @@ interface MeetingsListProps {
 export default function MeetingsList({ meetings, page, totalPages }: MeetingsListProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [isRequeuing, setIsRequeuing] = useState(false);
 
   const handlePageChange = (newPage: number) => {
     const params = new URLSearchParams(searchParams);
     params.set('page', newPage.toString());
     router.push(`/meetings?${params.toString()}`);
+  };
+
+  const toggleSelection = (id: string) => {
+    setSelectedIds(prev =>
+      prev.includes(id)
+        ? prev.filter(i => i !== id)
+        : [...prev, id]
+    );
+  };
+
+  const toggleAll = () => {
+    setSelectedIds(prev =>
+      prev.length === meetings.length
+        ? []
+        : meetings.map(m => m.id)
+    );
+  };
+
+  const handleDelete = async () => {
+    if (!confirm(`¿Eliminar ${selectedIds.length} reuniones? Esta acción no se puede deshacer.`)) return;
+
+    setIsDeleting(true);
+    try {
+      const response = await fetch('/api/meetings', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ids: selectedIds }),
+      });
+
+      if (response.ok) {
+        setSelectedIds([]);
+        router.refresh();
+      } else {
+        alert('Error al eliminar las reuniones');
+      }
+    } catch (error) {
+      console.error('Error deleting meetings:', error);
+      alert('Error al eliminar las reuniones');
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  const handleRequeue = async () => {
+    if (!confirm(`¿Reencolar ${selectedIds.length} reuniones para análisis de IA?`)) return;
+
+    setIsRequeuing(true);
+    try {
+      const response = await fetch('/api/meetings/requeue', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ids: selectedIds }),
+      });
+
+      if (response.ok) {
+        setSelectedIds([]);
+        router.refresh();
+        alert('Reuniones reencoladas exitosamente');
+      } else {
+        alert('Error al reencolar las reuniones');
+      }
+    } catch (error) {
+      console.error('Error requeuing meetings:', error);
+      alert('Error al reencolar las reuniones');
+    } finally {
+      setIsRequeuing(false);
+    }
+  };
+
+  const handleViewMetrics = () => {
+    router.push(`/?ids=${selectedIds.join(',')}`);
   };
 
   if (meetings.length === 0) {
@@ -47,10 +122,47 @@ export default function MeetingsList({ meetings, page, totalPages }: MeetingsLis
 
   return (
     <div className={styles.container}>
+      {/* Barra flotante de acciones */}
+      {selectedIds.length > 0 && (
+        <div className={styles.actionBar}>
+          <span className={styles.selectionCount}>
+            {selectedIds.length} seleccionada{selectedIds.length > 1 ? 's' : ''}
+          </span>
+          <button
+            onClick={handleViewMetrics}
+            className={styles.actionButton}
+          >
+            Ver métricas
+          </button>
+          <button
+            onClick={handleRequeue}
+            disabled={isRequeuing}
+            className={styles.actionButton}
+          >
+            {isRequeuing ? 'Reencolando...' : 'Reencolar para IA'}
+          </button>
+          <button
+            onClick={handleDelete}
+            disabled={isDeleting}
+            className={`${styles.actionButton} ${styles.deleteButton}`}
+          >
+            {isDeleting ? 'Eliminando...' : 'Eliminar'}
+          </button>
+        </div>
+      )}
+
       <div className={styles.tableWrapper}>
         <table className={styles.table}>
           <thead>
             <tr>
+              <th className={styles.checkboxCell}>
+                <input
+                  type="checkbox"
+                  checked={selectedIds.length === meetings.length && meetings.length > 0}
+                  onChange={toggleAll}
+                  className={styles.checkbox}
+                />
+              </th>
               <th>Cliente</th>
               <th>Email</th>
               <th>Vendedor</th>
@@ -63,6 +175,14 @@ export default function MeetingsList({ meetings, page, totalPages }: MeetingsLis
           <tbody>
             {meetings.map((meeting) => (
               <tr key={meeting.id}>
+                <td className={styles.checkboxCell}>
+                  <input
+                    type="checkbox"
+                    checked={selectedIds.includes(meeting.id)}
+                    onChange={() => toggleSelection(meeting.id)}
+                    className={styles.checkbox}
+                  />
+                </td>
                 <td className={styles.clientName}>{meeting.clientName}</td>
                 <td className={styles.email}>{meeting.email}</td>
                 <td>
