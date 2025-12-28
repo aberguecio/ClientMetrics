@@ -1,0 +1,14 @@
+.header {
+  margin-bottom: 2rem;
+}
+
+.subtitle {
+  color: var(--text-secondary);
+  font-size: 1rem;
+  margin-top: 0.5rem;
+}
+
+.subtitle strong {
+  color: var(--text-primary);
+  font-weight: 600;
+}

@@ -1,0 +1,23 @@
+.card {
+  background-color: var(--bg-primary);
+  border-radius: 0.5rem;
+  box-shadow: var(--shadow);
+  padding: 2rem;
+}
+
+.description {
+  color: var(--text-secondary);
+  margin-bottom: 1.5rem;
+  font-size: 1rem;
+}
+
+.checkList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.checkItem {
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+}
