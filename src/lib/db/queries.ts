@@ -1,7 +1,8 @@
 import { db } from './index';
 import { salesMeetings, llmAnalysis, processingJobs, uploads } from './schema';
-import { eq, desc, and, sql, count, isNull, inArray } from 'drizzle-orm';
+import { eq, desc, and, sql, count, isNull, inArray, gte, lte } from 'drizzle-orm';
 import type { MetricsOverview, RepPerformance, CategoryDistribution, TrendData, AnalyticsData } from '@/types/api';
+import type { SavedFilter } from '@/types/charts';
 import { calculatePercentage } from '../utils';
 
 /**
@@ -212,6 +213,70 @@ export async function getMeetingsByIds(ids: string[]) {
 }
 
 /**
+ * Get meetings filtered by SavedFilter criteria
+ */
+export async function getMeetingsWithFilters(filter: SavedFilter) {
+  const conditions: any[] = [];
+
+  // Base fields filters
+  if (filter.sales_rep) {
+    conditions.push(eq(salesMeetings.salesRep, filter.sales_rep));
+  }
+  if (filter.closed !== undefined && filter.closed !== null) {
+    conditions.push(eq(salesMeetings.closed, filter.closed));
+  }
+
+  // Date range filters
+  if (filter.date_from) {
+    conditions.push(gte(salesMeetings.meetingDate, filter.date_from));
+  }
+  if (filter.date_to) {
+    conditions.push(lte(salesMeetings.meetingDate, filter.date_to));
+  }
+
+  // LLM analysis JSONB filters
+  if (filter.sector) {
+    conditions.push(sql`${llmAnalysis.analysisJson}->>'sector' = ${filter.sector}`);
+  }
+  if (filter.company_size) {
+    conditions.push(sql`${llmAnalysis.analysisJson}->>'company_size' = ${filter.company_size}`);
+  }
+  if (filter.discovery_channel) {
+    conditions.push(sql`${llmAnalysis.analysisJson}->>'discovery_channel' = ${filter.discovery_channel}`);
+  }
+  if (filter.budget_range) {
+    conditions.push(sql`${llmAnalysis.analysisJson}->>'budget_range' = ${filter.budget_range}`);
+  }
+  if (filter.decision_maker !== undefined && filter.decision_maker !== null) {
+    conditions.push(sql`CAST(${llmAnalysis.analysisJson}->>'decision_maker' AS BOOLEAN) = ${filter.decision_maker}`);
+  }
+  if (filter.pain_points) {
+    conditions.push(sql`${llmAnalysis.analysisJson}->>'pain_points' ILIKE ${'%' + filter.pain_points + '%'}`);
+  }
+
+  const meetings = await db
+    .select({
+      id: salesMeetings.id,
+      clientName: salesMeetings.clientName,
+      email: salesMeetings.email,
+      phone: salesMeetings.phone,
+      meetingDate: salesMeetings.meetingDate,
+      salesRep: salesMeetings.salesRep,
+      closed: salesMeetings.closed,
+      transcript: salesMeetings.transcript,
+      createdAt: salesMeetings.createdAt,
+      updatedAt: salesMeetings.updatedAt,
+      analysisJson: llmAnalysis.analysisJson,
+    })
+    .from(salesMeetings)
+    .leftJoin(llmAnalysis, eq(salesMeetings.id, llmAnalysis.meetingId))
+    .where(conditions.length > 0 ? and(...conditions) : undefined)
+    .orderBy(desc(salesMeetings.meetingDate));
+
+  return meetings;
+}
+
+/**
  * Calculate analytics from meetings data
  */
 export function calculateAnalytics(meetings: any[]): AnalyticsData {
@@ -237,40 +302,10 @@ export function calculateAnalytics(meetings: any[]): AnalyticsData {
     count,
   }));
 
-  // Group by interest level
-  const interestMap: Record<string, number> = {};
-  meetings.forEach(m => {
-    if (m.analysisJson?.interest_level) {
-      const level = m.analysisJson.interest_level;
-      interestMap[level] = (interestMap[level] || 0) + 1;
-    }
-  });
-
-  const byInterest = Object.entries(interestMap).map(([level, count]) => ({
-    level,
-    count,
-  }));
-
-  // Group by sentiment
-  const sentimentMap: Record<string, number> = {};
-  meetings.forEach(m => {
-    if (m.analysisJson?.sentiment) {
-      const sentiment = m.analysisJson.sentiment;
-      sentimentMap[sentiment] = (sentimentMap[sentiment] || 0) + 1;
-    }
-  });
-
-  const bySentiment = Object.entries(sentimentMap).map(([sentiment, count]) => ({
-    sentiment,
-    count,
-  }));
-
   return {
     total,
     winRate,
     avgConfidence,
     bySector,
-    byInterest,
-    bySentiment,
   };
 }

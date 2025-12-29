@@ -1,14 +1,20 @@
-import { getMeetingsByIds, getAllMeetingsWithAnalysis, calculateAnalytics } from '@/lib/db/queries';
+import { getAllMeetingsWithAnalysis, getMeetingsWithFilters, calculateAnalytics } from '@/lib/db/queries';
+import { getFilterById } from '@/lib/charts/queries';
 import DashboardCharts from '@/components/dashboard/DashboardCharts';
 import StatsCard from '@/components/dashboard/StatsCard';
+import ViewSelector from '@/components/views/ViewSelector';
+import FilterDropdown from '@/components/dashboard/FilterDropdown';
 import styles from "./page.module.css"
 
-export default async function Home({ searchParams }: { searchParams: { ids?: string } }) {
-  const ids = searchParams.ids?.split(',').filter(Boolean);
+export default async function Home({ searchParams }: { searchParams: { filterId?: string } }) {
+  const filterId = searchParams.filterId;
 
-  // Fetch meetings - either all or filtered by IDs
-  const meetings = ids && ids.length > 0
-    ? await getMeetingsByIds(ids)
+  // Fetch filter if provided
+  const filter = filterId ? await getFilterById(filterId) : null;
+
+  // Fetch meetings - either all or filtered
+  const meetings = filter
+    ? await getMeetingsWithFilters(filter)
     : await getAllMeetingsWithAnalysis();
 
   // Calculate analytics from meetings
@@ -16,13 +22,19 @@ export default async function Home({ searchParams }: { searchParams: { ids?: str
 
   return (
     <div className="container">
-      <h1>Dashboard de Métricas</h1>
+      <div className={styles.dashboardHeader}>
+        <h1>Dashboard de Métricas</h1>
+        <div style={{ display: 'flex', gap: '1rem' }}>
+          <FilterDropdown />
+          <ViewSelector />
+        </div>
+      </div>
 
-      {/* Show selection indicator if IDs present */}
-      {ids && ids.length > 0 && (
+      {/* Show filter indicator if active */}
+      {filter && (
         <div className={styles.selectionBanner}>
-          <span>Mostrando métricas de {ids.length} reuniones seleccionadas</span>
-          <a href="/" className={styles.clearLink}>Ver todas</a>
+          <span>Filtro activo: {filter.name}</span>
+          <a href="/" className={styles.clearLink}>Limpiar filtro</a>
         </div>
       )}
 

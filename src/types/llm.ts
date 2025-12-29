@@ -1,38 +1,17 @@
 import { z } from 'zod';
+import { SECTOR_VALUES, DISCOVERY_CHANNEL_VALUES, COMPANY_SIZE_VALUES } from '@/lib/constants/llm-enums';
 
 // Validation schema for LLM analysis
 export const AnalysisSchema = z.object({
-  // Core metrics
-  interest_level: z.enum(['low', 'medium', 'high']),
-  sentiment: z.enum(['positive', 'neutral', 'negative']),
-  urgency: z.enum(['low', 'medium', 'high']),
-  icp_fit: z.enum(['low', 'medium', 'high']),
-
   // Business context
-  sector: z.enum([
-    'financiero', 'ecommerce', 'salud', 'educacion', 'logistica',
-    'viajes', 'moda', 'consultoria', 'restaurante', 'software',
-    'catering', 'bienes_raices', 'ong', 'seguridad', 'turismo',
-    'legal', 'eventos', 'tecnologia', 'ambiental', 'transporte',
-    'traduccion', 'diseño', 'produccion_audiovisual', 'contabilidad',
-    'belleza', 'energia_renovable', 'yoga', 'construccion', 'pasteleria',
-    'cosmeticos', 'arquitectura', 'alimentos', 'marketing', 'libreria',
-    'fotografia', 'agricultura', 'otro'
-  ]),
-  company_size: z.enum(['startup', 'pequeña', 'mediana', 'grande', 'enterprise']),
+  sector: z.enum(SECTOR_VALUES),
+  company_size: z.enum(COMPANY_SIZE_VALUES),
 
   // Operational metrics
   interaction_volume_daily: z.number().int().min(0),
-  specific_pain: z.string(), // Main pain point described in detail
 
-  // Discovery & interest
-  discovery_channel: z.enum([
-    'colega', 'google', 'conferencia', 'feria', 'webinar',
-    'podcast', 'articulo', 'linkedin', 'recomendacion_amigo',
-    'foro', 'grupo_emprendedores', 'seminario', 'evento_networking',
-    'charla', 'otro'
-  ]),
-  clear_vambe_interest: z.boolean(),
+  // Discovery
+  discovery_channel: z.enum(DISCOVERY_CHANNEL_VALUES),
 
   // Detailed insights
   pain_points: z.array(z.string()),
@@ -44,7 +23,6 @@ export const AnalysisSchema = z.object({
 
   // Confidence scores
   confidence: z.object({
-    interest_level: z.number().min(0).max(1),
     sector: z.number().min(0).max(1),
   }),
 });

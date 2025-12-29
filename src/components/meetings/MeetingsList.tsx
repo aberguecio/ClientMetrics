@@ -105,10 +105,6 @@ export default function MeetingsList({ meetings, page, totalPages }: MeetingsLis
     }
   };
 
-  const handleViewMetrics = () => {
-    router.push(`/?ids=${selectedIds.join(',')}`);
-  };
-
   if (meetings.length === 0) {
     return (
       <div className={styles.empty}>
@@ -128,12 +124,6 @@ export default function MeetingsList({ meetings, page, totalPages }: MeetingsLis
           <span className={styles.selectionCount}>
             {selectedIds.length} seleccionada{selectedIds.length > 1 ? 's' : ''}
           </span>
-          <button
-            onClick={handleViewMetrics}
-            className={styles.actionButton}
-          >
-            Ver métricas
-          </button>
           <button
             onClick={handleRequeue}
             disabled={isRequeuing}

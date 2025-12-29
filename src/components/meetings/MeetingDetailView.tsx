@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { formatDate } from '@/lib/utils';
 import type { MeetingDetail } from '@/types/api';
 import styles from './MeetingDetailView.module.css';
+import { SECTOR_LABELS, COMPANY_SIZE_LABELS, DISCOVERY_CHANNEL_LABELS } from '@/lib/constants/llm-enums';
 
 interface MeetingDetailViewProps {
   meeting: MeetingDetail;
@@ -59,27 +60,23 @@ export default function MeetingDetailView({ meeting }: MeetingDetailViewProps) {
           <div className={styles.metricsGrid}>
             <div className={styles.metricCard}>
               <label>Sector</label>
-              <p className={styles.metricValue}>{analysis.sector || 'N/A'}</p>
+              <p className={styles.metricValue}>{analysis.sector ? SECTOR_LABELS[analysis.sector as keyof typeof SECTOR_LABELS] || analysis.sector : 'N/A'}</p>
             </div>
             <div className={styles.metricCard}>
-              <label>Nivel de Interés</label>
-              <p className={styles.metricValue}>{analysis.interest_level || 'N/A'}</p>
+              <label>Tamaño Empresa</label>
+              <p className={styles.metricValue}>{analysis.company_size ? COMPANY_SIZE_LABELS[analysis.company_size as keyof typeof COMPANY_SIZE_LABELS] || analysis.company_size : 'N/A'}</p>
             </div>
             <div className={styles.metricCard}>
-              <label>Sentimiento</label>
-              <p className={styles.metricValue}>{analysis.sentiment || 'N/A'}</p>
+              <label>Canal de Descubrimiento</label>
+              <p className={styles.metricValue}>{analysis.discovery_channel ? DISCOVERY_CHANNEL_LABELS[analysis.discovery_channel as keyof typeof DISCOVERY_CHANNEL_LABELS] || analysis.discovery_channel : 'N/A'}</p>
             </div>
             <div className={styles.metricCard}>
-              <label>Urgencia</label>
-              <p className={styles.metricValue}>{analysis.urgency || 'N/A'}</p>
+              <label>Volumen de Interacciones Diarias</label>
+              <p className={styles.metricValue}>{analysis.interaction_volume_daily || 'N/A'}</p>
             </div>
             <div className={styles.metricCard}>
-              <label>ICP Fit</label>
-              <p className={styles.metricValue}>{analysis.icp_fit || 'N/A'}</p>
-            </div>
-            <div className={styles.metricCard}>
-              <label>Confianza</label>
-              <p className={styles.metricValue}>{analysis.confidence ? `${(analysis.confidence * 100).toFixed(0)}%` : 'N/A'}</p>
+              <label>Confianza (Sector)</label>
+              <p className={styles.metricValue}>{analysis.confidence?.sector ? `${(analysis.confidence.sector * 100).toFixed(0)}%` : 'N/A'}</p>
             </div>
           </div>
 

@@ -69,8 +69,6 @@ export interface AnalyticsData {
   winRate: number;
   avgConfidence: number;
   bySector: Array<{ sector: string; count: number }>;
-  byInterest: Array<{ level: string; count: number }>;
-  bySentiment: Array<{ sentiment: string; count: number }>;
 }
 
 // Meeting detail response

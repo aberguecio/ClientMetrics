@@ -1,0 +1,41 @@
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background-color: #dbeafe;
+  border: 1px solid #3b82f6;
+  border-radius: 9999px;
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+}
+
+.content {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+}
+
+.name {
+  font-weight: 600;
+  color: #1e40af;
+}
+
+.details {
+  font-size: 0.75rem;
+  color: #3b82f6;
+}
+
+.removeButton {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #3b82f6;
+  font-size: 1.125rem;
+  padding: 0;
+  line-height: 1;
+  margin-left: 0.25rem;
+}
+
+.removeButton:hover {
+  color: #1e40af;
+}

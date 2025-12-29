@@ -1,3 +1,10 @@
+import { SECTOR_VALUES, DISCOVERY_CHANNEL_VALUES, COMPANY_SIZE_VALUES } from '@/lib/constants/llm-enums';
+
+// Generate enum strings dynamically from centralized constants
+const sectorEnum = SECTOR_VALUES.join('|');
+const discoveryChannelEnum = DISCOVERY_CHANNEL_VALUES.join('|');
+const companySizeEnum = COMPANY_SIZE_VALUES.join('|');
+
 export const CATEGORIZATION_PROMPT_V1 = `You are an expert sales analyst for Vambe, a customer service automation platform. Analyze the following sales meeting transcript and extract structured information.
 
 Meeting Information:
@@ -12,45 +19,53 @@ Transcript:
 Analyze this meeting and provide a JSON response with the following exact structure:
 
 {
-  "interest_level": "low|medium|high",
-  "sentiment": "positive|neutral|negative",
-  "urgency": "low|medium|high",
-  "icp_fit": "low|medium|high",
-  "sector": "financiero|ecommerce|salud|educacion|logistica|viajes|moda|consultoria|restaurante|software|catering|bienes_raices|ong|seguridad|turismo|legal|eventos|tecnologia|ambiental|transporte|traduccion|diseño|produccion_audiovisual|contabilidad|belleza|energia_renovable|yoga|construccion|pasteleria|cosmeticos|arquitectura|alimentos|marketing|libreria|fotografia|agricultura|otro",
-  "company_size": "startup|pequeña|mediana|grande|enterprise",
+  "sector": "${sectorEnum}",
+  "company_size": "${companySizeEnum}",
   "interaction_volume_daily": <integer - normalize to daily if weekly/monthly mentioned>,
-  "specific_pain": "<main concrete pain point in detail>",
-  "discovery_channel": "colega|google|conferencia|feria|webinar|podcast|articulo|linkedin|recomendacion_amigo|foro|grupo_emprendedores|seminario|evento_networking|charla|otro",
-  "clear_vambe_interest": true|false,
+  "discovery_channel": "${discoveryChannelEnum}",
   "pain_points": ["array of specific pain points"],
   "use_cases": ["array of specific use cases mentioned"],
   "objections": ["array of objections or concerns raised"],
   "others": "<free-form field for any other important insights, concerns, or context not captured in other fields>",
   "confidence": {
-    "interest_level": 0.0-1.0,
     "sector": 0.0-1.0
   }
 }
 
 Guidelines:
-- interest_level: Client's genuine interest level in Vambe
-- sentiment: Overall emotional tone of the conversation
-- urgency: How urgent is their need to solve the problem
-- icp_fit: How well client fits Vambe's Ideal Customer Profile
-- sector: Industry/vertical of the client's business
+- sector: Industry/vertical of the client's business. Choose the most appropriate category:
+  * tecnologia_software: Technology companies, software development, IT services, design, audiovisual production, photography
+  * servicios_profesionales: Consulting, legal, accounting, translation, architecture, marketing agencies
+  * comercio_retail: E-commerce, fashion, retail stores, bookstores
+  * salud_bienestar: Healthcare, wellness, beauty, yoga, cosmetics
+  * alimentos_bebidas: Restaurants, catering, bakeries, food services
+  * inmobiliario_construccion: Real estate, construction
+  * eventos_turismo: Events, tourism, travel agencies
+  * financiero: Financial services, banking, insurance
+  * logistica_transporte: Logistics, transportation, shipping
+  * educacion: Education, training, schools
+  * sostenibilidad: Environmental services, renewable energy, agriculture
+  * otros: NGOs, security, or anything not fitting above categories
 - company_size: Estimate based on team mentions, operations scale, etc.
+  * pequeña: Small businesses, startups, few employees
+  * mediana: Mid-sized companies, established businesses
+  * grande: Large corporations, enterprise-level organizations
 - interaction_volume_daily: IMPORTANT - Convert to daily number (if they say "500/week" → 71, "300/month" → 10)
-- specific_pain: The main, concrete problem they're trying to solve (be specific)
 - discovery_channel: How they found out about Vambe
-- clear_vambe_interest: Whether they explicitly show interest in Vambe specifically
+  * referencia: Colleague or friend recommendation
+  * busqueda_organica: Google search or articles
+  * eventos_presenciales: In-person events (conferences, trade shows, seminars, networking events, talks)
+  * eventos_virtuales: Virtual events (webinars, podcasts)
+  * redes_profesionales: LinkedIn, forums, entrepreneur groups
+  * otro: Any other channel
 - pain_points: List specific problems mentioned
 - use_cases: Specific ways they want to use the solution
 - objections: Any concerns, doubts, or barriers mentioned
 - others: Capture ANY other relevant information not fitting elsewhere (integration needs, special requirements, competitors mentioned, decision-making process, team structure, etc.)
-- confidence: Your confidence in the assessments (0-1 scale)
+- confidence.sector: Your confidence in the sector classification (0-1 scale)
 
 IMPORTANT:
-- Be precise with sector classification
+- Be precise with sector classification - choose the best fit from the consolidated categories
 - Always normalize interaction_volume to DAILY
 - Use "others" field generously for context that doesn't fit elsewhere
 - Respond ONLY with valid JSON, no additional text or markdown.`;
