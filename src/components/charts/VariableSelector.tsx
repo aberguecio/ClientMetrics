@@ -5,28 +5,35 @@ interface VariableSelectorProps {
   value: string;
   onChange: (value: string) => void;
   disabled?: boolean;
+  type?: 'category' | 'metric'; // New prop to filter by field type
 }
 
-// Available variables grouped by category
-const VARIABLE_GROUPS = {
-  'Base Fields': [
-    { value: 'salesRep', label: 'Sales Rep' },
-    { value: 'closed', label: 'Closed Status' },
-    { value: 'meetingDate', label: 'Meeting Date' },
+// Categorical fields (for X-Axis, Category, Group By)
+const CATEGORICAL_FIELDS = {
+  'Campos Base': [
+    { value: 'salesRep', label: 'Representante de Ventas' },
+    { value: 'closed', label: 'Estado (Cerrada/Abierta)' },
+    { value: 'meetingDate', label: 'Fecha de Reunión' },
   ],
-  'LLM Analysis': [
+  'Análisis LLM': [
     { value: 'sector', label: 'Sector' },
-    { value: 'company_size', label: 'Company Size' },
-    { value: 'discovery_channel', label: 'Discovery Channel' },
-    { value: 'budget_range', label: 'Budget Range' },
-    { value: 'decision_maker', label: 'Decision Maker' },
-  ],
-  'Metrics': [
-    { value: 'count', label: 'Count' },
+    { value: 'company_size', label: 'Tamaño de Empresa' },
+    { value: 'discovery_channel', label: 'Canal de Descubrimiento' },
   ],
 };
 
-export default function VariableSelector({ label, value, onChange, disabled }: VariableSelectorProps) {
+// Quantifiable fields (for Y-Axis, Metrics)
+const QUANTIFIABLE_FIELDS = {
+  'Métricas': [
+    { value: 'count', label: 'Cantidad de Reuniones' },
+    { value: 'interaction_volume_daily', label: 'Volumen de Interacción Diaria (promedio)' },
+  ],
+};
+
+export default function VariableSelector({ label, value, onChange, disabled, type = 'category' }: VariableSelectorProps) {
+  // Select appropriate field groups based on type
+  const fieldGroups = type === 'metric' ? QUANTIFIABLE_FIELDS : CATEGORICAL_FIELDS;
+
   return (
     <div>
       <label htmlFor={label} style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600 }}>
@@ -45,8 +52,8 @@ export default function VariableSelector({ label, value, onChange, disabled }: V
           backgroundColor: disabled ? '#f3f4f6' : 'white',
         }}
       >
-        <option value="">Select a variable</option>
-        {Object.entries(VARIABLE_GROUPS).map(([groupName, variables]) => (
+        <option value="">Selecciona una variable</option>
+        {Object.entries(fieldGroups).map(([groupName, variables]) => (
           <optgroup key={groupName} label={groupName}>
             {variables.map((variable) => (
               <option key={variable.value} value={variable.value}>

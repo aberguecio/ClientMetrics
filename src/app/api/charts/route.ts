@@ -22,21 +22,39 @@ export async function POST(request: Request) {
   try {
     const body = await request.json();
 
-    // Validate required fields
-    if (!body.name || !body.chart_type || !body.x_axis || !body.y_axis || !body.group_by) {
+    // Validate chart_type first
+    const validChartTypes = ['pie', 'bar', 'line', 'area'];
+    if (!body.chart_type || !validChartTypes.includes(body.chart_type)) {
       return NextResponse.json(
-        { error: 'Missing required fields: name, chart_type, x_axis, y_axis, group_by' },
+        { error: 'Invalid or missing chart_type. Must be one of: pie, bar, line, area' },
         { status: 400 }
       );
     }
 
-    // Validate chart_type
-    const validChartTypes = ['pie', 'bar', 'line', 'area'];
-    if (!validChartTypes.includes(body.chart_type)) {
+    // Validate required fields based on chart type
+    if (!body.name) {
       return NextResponse.json(
-        { error: 'Invalid chart_type. Must be one of: pie, bar, line, area' },
+        { error: 'Missing required field: name' },
         { status: 400 }
       );
+    }
+
+    // Chart-type specific validation
+    if (body.chart_type === 'pie') {
+      if (!body.group_by || !body.y_axis) {
+        return NextResponse.json(
+          { error: 'Pie charts require: group_by and y_axis' },
+          { status: 400 }
+        );
+      }
+    } else {
+      // bar, line, area
+      if (!body.x_axis || !body.y_axis) {
+        return NextResponse.json(
+          { error: `${body.chart_type} charts require: x_axis and y_axis` },
+          { status: 400 }
+        );
+      }
     }
 
     // Validate aggregation
@@ -52,9 +70,9 @@ export async function POST(request: Request) {
       name: body.name,
       description: body.description || null,
       chartType: body.chart_type,
-      xAxis: body.x_axis,
-      yAxis: body.y_axis,
-      groupBy: body.group_by,
+      xAxis: body.x_axis || '',
+      yAxis: body.y_axis || 'count',
+      groupBy: body.group_by || '',
       aggregation: body.aggregation || 'count',
       timeGroup: body.time_group || null,
       colors: body.colors || null,

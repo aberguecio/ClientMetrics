@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import ChartRenderer from './ChartRenderer';
 import type { SavedChart, ChartData, ChartType, AggregationType } from '@/types/charts';
+import { SECTOR_LABELS, COMPANY_SIZE_LABELS, DISCOVERY_CHANNEL_LABELS } from '@/lib/constants/llm-enums';
 
 interface ChartPreviewProps {
   chartType: ChartType;
@@ -13,14 +14,127 @@ interface ChartPreviewProps {
   colors?: string;
 }
 
-// Sample data for preview
-const SAMPLE_DATA: ChartData[] = [
-  { label: 'Technology', value: 45 },
-  { label: 'Finance', value: 32 },
-  { label: 'Healthcare', value: 28 },
-  { label: 'Retail', value: 18 },
-  { label: 'Manufacturing', value: 12 },
-];
+// Generate sample data based on the selected field
+function generateSampleData(field: string): ChartData[] {
+  switch (field) {
+    case 'sector':
+      return [
+        { label: SECTOR_LABELS.tecnologia_software, value: 12 },
+        { label: SECTOR_LABELS.servicios_profesionales, value: 8 },
+        { label: SECTOR_LABELS.comercio_retail, value: 5 },
+        { label: SECTOR_LABELS.salud_bienestar, value: 3 },
+        { label: SECTOR_LABELS.financiero, value: 2 },
+      ];
+
+    case 'company_size':
+      return [
+        { label: COMPANY_SIZE_LABELS.pequeña, value: 15 },
+        { label: COMPANY_SIZE_LABELS.mediana, value: 10 },
+        { label: COMPANY_SIZE_LABELS.grande, value: 5 },
+      ];
+
+    case 'discovery_channel':
+      return [
+        { label: DISCOVERY_CHANNEL_LABELS.referencia, value: 10 },
+        { label: DISCOVERY_CHANNEL_LABELS.busqueda_organica, value: 8 },
+        { label: DISCOVERY_CHANNEL_LABELS.eventos_presenciales, value: 6 },
+        { label: DISCOVERY_CHANNEL_LABELS.redes_profesionales, value: 4 },
+        { label: DISCOVERY_CHANNEL_LABELS.otro, value: 2 },
+      ];
+
+    case 'salesRep':
+    case 'sales_rep':
+      return [
+        { label: 'Juan Pérez', value: 12 },
+        { label: 'María García', value: 10 },
+        { label: 'Carlos López', value: 8 },
+        { label: 'Ana Martínez', value: 6 },
+        { label: 'Pedro Sánchez', value: 4 },
+      ];
+
+    case 'closed':
+      return [
+        { label: 'Cerradas', value: 18 },
+        { label: 'Abiertas', value: 12 },
+      ];
+
+    case 'meetingDate':
+    case 'meeting_date':
+      return [
+        { label: '2025-01', value: 8 },
+        { label: '2025-02', value: 12 },
+        { label: '2025-03', value: 15 },
+        { label: '2025-04', value: 10 },
+        { label: '2025-05', value: 5 },
+      ];
+
+    default:
+      // Fallback genérico
+      return [
+        { label: 'Categoría A', value: 12 },
+        { label: 'Categoría B', value: 8 },
+        { label: 'Categoría C', value: 5 },
+        { label: 'Categoría D', value: 3 },
+      ];
+  }
+}
+
+// Generate sample data with multiple series for groupBy
+function generateMultiSeriesSampleData(xAxisField: string, groupByField: string): ChartData[] {
+  // Get sample categories for x-axis
+  const xAxisData = generateSampleData(xAxisField);
+
+  // Determine group values based on groupBy field
+  let groupValues: string[] = [];
+  switch (groupByField) {
+    case 'closed':
+      groupValues = ['true', 'false'];
+      break;
+    case 'sector':
+      groupValues = [
+        SECTOR_LABELS.tecnologia_software,
+        SECTOR_LABELS.servicios_profesionales,
+        SECTOR_LABELS.comercio_retail
+      ];
+      break;
+    case 'company_size':
+      groupValues = [
+        COMPANY_SIZE_LABELS.pequeña,
+        COMPANY_SIZE_LABELS.mediana,
+        COMPANY_SIZE_LABELS.grande
+      ];
+      break;
+    case 'discovery_channel':
+      groupValues = [
+        DISCOVERY_CHANNEL_LABELS.referencia,
+        DISCOVERY_CHANNEL_LABELS.busqueda_organica
+      ];
+      break;
+    case 'salesRep':
+    case 'sales_rep':
+      groupValues = ['Juan Pérez', 'María García'];
+      break;
+    default:
+      groupValues = ['Serie A', 'Serie B'];
+  }
+
+  // Generate multi-series data
+  return xAxisData.slice(0, 4).map((item) => {
+    const dataPoint: ChartData = {
+      label: item.label,
+      value: 0,
+    };
+
+    // Add value for each group
+    groupValues.forEach((groupValue, index) => {
+      const value = Math.floor(Math.random() * 10) + 3;
+      dataPoint[groupValue] = value;
+      dataPoint.value += value;
+    });
+
+    return dataPoint;
+  });
+}
 
 export default function ChartPreview({ chartType, xAxis, yAxis, groupBy, aggregation, colors }: ChartPreviewProps) {
   const [isClient, setIsClient] = useState(false);
@@ -33,13 +147,48 @@ export default function ChartPreview({ chartType, xAxis, yAxis, groupBy, aggrega
     return <div style={{ padding: '2rem', textAlign: 'center' }}>Loading preview...</div>;
   }
 
-  if (!chartType || !xAxis || !yAxis || !groupBy) {
+  // Validate required fields based on chart type
+  if (!chartType || !yAxis) {
     return (
       <div style={{ padding: '2rem', textAlign: 'center', color: '#6b7280' }}>
         Please select chart type and variables to see a preview
       </div>
     );
   }
+
+  // Chart-type specific validation
+  if (chartType === 'pie' && !groupBy) {
+    return (
+      <div style={{ padding: '2rem', textAlign: 'center', color: '#6b7280' }}>
+        Please select a category for the pie chart
+      </div>
+    );
+  }
+
+  if ((chartType === 'bar' || chartType === 'line' || chartType === 'area') && !xAxis) {
+    return (
+      <div style={{ padding: '2rem', textAlign: 'center', color: '#6b7280' }}>
+        Please select X-axis for the chart
+      </div>
+    );
+  }
+
+  // Determine which field to use for generating sample data based on chart type
+  const dataField = chartType === 'pie' ? groupBy : xAxis;
+
+  // If no dataField is selected yet, return early
+  if (!dataField) {
+    return (
+      <div style={{ padding: '2rem', textAlign: 'center', color: '#6b7280' }}>
+        Please select all required fields to see a preview
+      </div>
+    );
+  }
+
+  // Generate sample data with groupBy support
+  const sampleData = chartType !== 'pie' && groupBy
+    ? generateMultiSeriesSampleData(xAxis, groupBy)
+    : generateSampleData(dataField);
 
   const mockChart: SavedChart = {
     id: 'preview',
@@ -59,7 +208,7 @@ export default function ChartPreview({ chartType, xAxis, yAxis, groupBy, aggrega
       <h4 style={{ marginBottom: '1rem', fontSize: '0.875rem', fontWeight: 600, color: '#374151' }}>
         Chart Preview
       </h4>
-      <ChartRenderer chart={mockChart} data={SAMPLE_DATA} />
+      <ChartRenderer chart={mockChart} data={sampleData} />
       <p style={{ marginTop: '1rem', fontSize: '0.75rem', color: '#6b7280', textAlign: 'center' }}>
         Preview with sample data
       </p>

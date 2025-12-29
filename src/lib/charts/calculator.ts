@@ -22,14 +22,146 @@ export async function calculateChartData(
   // 2. Fetch meetings with merged filters
   const meetings = await getMeetingsWithFilters(mergedFilter);
 
-  // 3. Group by field
-  const grouped = groupByField(meetings, chart.group_by, chart.time_group);
+  // 3. Determine grouping field based on chart type
+  // For pie charts: use group_by
+  // For bar/line/area: use x_axis for primary grouping, group_by for series
+  const primaryGroupField = chart.chart_type === 'pie' ? chart.group_by : chart.x_axis;
 
-  // 4. Apply aggregation
-  const aggregated = applyAggregation(grouped, chart.aggregation);
+  // 4. Check if we need multiple series (bar/line/area with group_by)
+  const needsMultipleSeries = chart.chart_type !== 'pie' && chart.group_by && chart.group_by.trim() !== '';
 
-  // 5. Format for chart
-  return formatForChart(aggregated, chart.x_axis, chart.y_axis);
+  if (needsMultipleSeries) {
+    // Multiple series: group by both x_axis and group_by
+    return calculateMultiSeriesData(meetings, chart);
+  } else {
+    // Single series: standard grouping
+    const grouped = groupByField(meetings, primaryGroupField, chart.time_group);
+    const aggregated = applyAggregation(grouped, chart.aggregation, chart.y_axis);
+    return formatForChart(aggregated, chart.x_axis, chart.y_axis);
+  }
+}
+
+/**
+ * Calculates chart data for multiple series (when group_by is used)
+ *
+ * @param meetings - Array of meetings
+ * @param chart - Chart configuration
+ * @returns Formatted data with multiple series
+ */
+function calculateMultiSeriesData(
+  meetings: Array<SalesMeeting & { analysis?: any }>,
+  chart: SavedChart
+): ChartData[] {
+  // Create a nested map: xAxisValue -> groupByValue -> meetings[]
+  const nestedMap = new Map<string, Map<string, Array<SalesMeeting & { analysis?: any }>>>();
+
+  for (const meeting of meetings) {
+    // Get x-axis value
+    let xValue: string;
+    if (chart.x_axis === 'meetingDate' && chart.time_group) {
+      xValue = formatDateByGroup(meeting.meetingDate, chart.time_group);
+    } else if (chart.x_axis in meeting) {
+      xValue = String((meeting as any)[chart.x_axis] ?? 'Unknown');
+    } else if (meeting.analysis && chart.x_axis in meeting.analysis) {
+      xValue = String(meeting.analysis[chart.x_axis] ?? 'Unknown');
+    } else {
+      xValue = 'Unknown';
+    }
+
+    // Get group_by value
+    let groupValue: string;
+    if (chart.group_by in meeting) {
+      groupValue = String((meeting as any)[chart.group_by] ?? 'Unknown');
+    } else if (meeting.analysis && chart.group_by in meeting.analysis) {
+      groupValue = String(meeting.analysis[chart.group_by] ?? 'Unknown');
+    } else {
+      groupValue = 'Unknown';
+    }
+
+    // Add to nested map
+    if (!nestedMap.has(xValue)) {
+      nestedMap.set(xValue, new Map());
+    }
+    const groupMap = nestedMap.get(xValue)!;
+    if (!groupMap.has(groupValue)) {
+      groupMap.set(groupValue, []);
+    }
+    groupMap.get(groupValue)!.push(meeting);
+  }
+
+  // Get all unique series (group_by values)
+  const allSeries = new Set<string>();
+  for (const groupMap of nestedMap.values()) {
+    for (const seriesName of groupMap.keys()) {
+      allSeries.add(seriesName);
+    }
+  }
+
+  // Format data for Recharts with multiple series
+  const chartData: ChartData[] = [];
+
+  for (const [xValue, groupMap] of nestedMap.entries()) {
+    const dataPoint: ChartData = {
+      label: xValue,
+      value: 0, // Will be sum of all series
+    };
+
+    // Add each series value
+    for (const seriesName of allSeries) {
+      const meetings = groupMap.get(seriesName) || [];
+      const value = applyAggregationToMeetings(meetings, chart.aggregation, chart.y_axis);
+      dataPoint[seriesName] = value;
+      dataPoint.value += value;
+    }
+
+    chartData.push(dataPoint);
+  }
+
+  // Sort by x-axis value
+  chartData.sort((a, b) => a.label.localeCompare(b.label));
+
+  return chartData;
+}
+
+/**
+ * Helper function to apply aggregation to a meeting array
+ */
+function applyAggregationToMeetings(
+  meetings: Array<SalesMeeting & { analysis?: any }>,
+  type: AggregationType,
+  field: string = 'count'
+): number {
+  // If field is 'count', always return count regardless of aggregation type
+  if (field === 'count') {
+    return meetings.length;
+  }
+
+  // For other fields, extract numeric values
+  const values = meetings
+    .map(m => {
+      // Check if field exists in analysis
+      if (m.analysis && field in m.analysis) {
+        const val = m.analysis[field];
+        return typeof val === 'number' ? val : 0;
+      }
+      return 0;
+    })
+    .filter(v => v !== null && v !== undefined && !isNaN(v));
+
+  switch (type) {
+    case 'count':
+      return meetings.length;
+    case 'sum':
+      return values.reduce((sum, val) => sum + val, 0);
+    case 'avg':
+      return values.length > 0 ? values.reduce((sum, val) => sum + val, 0) / values.length : 0;
+    case 'min':
+      return values.length > 0 ? Math.min(...values) : 0;
+    case 'max':
+      return values.length > 0 ? Math.max(...values) : 0;
+    default:
+      return meetings.length;
+  }
 }
 
 /**
@@ -112,39 +244,54 @@ function formatDateByGroup(date: Date | string, grouping: TimeGrouping): string 
  *
  * @param grouped - Map of grouped meetings
  * @param type - Aggregation type
+ * @param field - Field to aggregate (y_axis)
  * @returns Map with aggregated values
  */
 export function applyAggregation(
   grouped: Map<string, Array<SalesMeeting & { analysis?: any }>>,
-  type: AggregationType
+  type: AggregationType,
+  field: string = 'count'
 ): Map<string, number> {
   const result = new Map<string, number>();
 
   for (const [key, meetings] of grouped.entries()) {
     let value: number;
 
-    switch (type) {
-      case 'count':
-        value = meetings.length;
-        break;
-      case 'sum':
-        // For now, just count as we don't have numeric fields to sum
-        // This can be extended when we have revenue or other numeric fields
-        value = meetings.length;
-        break;
-      case 'avg': {
-        // Calculate average of meetings per group (placeholder)
-        value = meetings.length;
-        break;
+    // If field is 'count', always return count regardless of aggregation type
+    if (field === 'count') {
+      value = meetings.length;
+    } else {
+      // For other fields, extract numeric values
+      const values = meetings
+        .map(m => {
+          // Check if field exists in analysis
+          if (m.analysis && field in m.analysis) {
+            const val = m.analysis[field];
+            return typeof val === 'number' ? val : 0;
+          }
+          return 0;
+        })
+        .filter(v => v !== null && v !== undefined && !isNaN(v));
+
+      switch (type) {
+        case 'count':
+          value = meetings.length;
+          break;
+        case 'sum':
+          value = values.reduce((sum, val) => sum + val, 0);
+          break;
+        case 'avg':
+          value = values.length > 0 ? values.reduce((sum, val) => sum + val, 0) / values.length : 0;
+          break;
+        case 'min':
+          value = values.length > 0 ? Math.min(...values) : 0;
+          break;
+        case 'max':
+          value = values.length > 0 ? Math.max(...values) : 0;
+          break;
+        default:
+          value = meetings.length;
       }
-      case 'min':
-        value = meetings.length > 0 ? 1 : 0;
-        break;
-      case 'max':
-        value = meetings.length;
-        break;
-      default:
-        value = meetings.length;
     }
 
     result.set(key, value);
