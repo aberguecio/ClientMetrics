@@ -84,45 +84,45 @@ export default function MeetingFilters() {
     const newLocalFilters: Record<string, string> = {};
 
     // Apply all filter fields to both URL params and local state
-    if (filter.sales_rep) {
-      params.set('salesRep', filter.sales_rep);
-      newLocalFilters.salesRep = filter.sales_rep;
+    if (filter.filter_data.sales_rep) {
+      params.set('salesRep', filter.filter_data.sales_rep);
+      newLocalFilters.salesRep = filter.filter_data.sales_rep;
     }
-    if (filter.closed !== undefined && filter.closed !== null) {
-      params.set('closed', String(filter.closed));
-      newLocalFilters.closed = String(filter.closed);
+    if (filter.filter_data.closed !== undefined && filter.filter_data.closed !== null) {
+      params.set('closed', String(filter.filter_data.closed));
+      newLocalFilters.closed = String(filter.filter_data.closed);
     }
-    if (filter.date_from) {
-      params.set('date_from', filter.date_from);
-      newLocalFilters.date_from = filter.date_from;
+    if (filter.filter_data.date_from) {
+      params.set('date_from', filter.filter_data.date_from);
+      newLocalFilters.date_from = filter.filter_data.date_from;
     }
-    if (filter.date_to) {
-      params.set('date_to', filter.date_to);
-      newLocalFilters.date_to = filter.date_to;
+    if (filter.filter_data.date_to) {
+      params.set('date_to', filter.filter_data.date_to);
+      newLocalFilters.date_to = filter.filter_data.date_to;
     }
-    if (filter.sector) {
-      params.set('sector', filter.sector);
-      newLocalFilters.sector = filter.sector;
+    if (filter.filter_data.sector) {
+      params.set('sector', filter.filter_data.sector);
+      newLocalFilters.sector = filter.filter_data.sector;
     }
-    if (filter.company_size) {
-      params.set('company_size', filter.company_size);
-      newLocalFilters.company_size = filter.company_size;
+    if (filter.filter_data.company_size) {
+      params.set('company_size', filter.filter_data.company_size);
+      newLocalFilters.company_size = filter.filter_data.company_size;
     }
-    if (filter.discovery_channel) {
-      params.set('discovery_channel', filter.discovery_channel);
-      newLocalFilters.discovery_channel = filter.discovery_channel;
+    if (filter.filter_data.discovery_channel) {
+      params.set('discovery_channel', filter.filter_data.discovery_channel);
+      newLocalFilters.discovery_channel = filter.filter_data.discovery_channel;
     }
-    if (filter.budget_range) {
-      params.set('budget_range', filter.budget_range);
-      newLocalFilters.budget_range = filter.budget_range;
+    if (filter.filter_data.budget_range) {
+      params.set('budget_range', filter.filter_data.budget_range);
+      newLocalFilters.budget_range = filter.filter_data.budget_range;
     }
-    if (filter.decision_maker !== undefined && filter.decision_maker !== null) {
-      params.set('decision_maker', String(filter.decision_maker));
-      newLocalFilters.decision_maker = String(filter.decision_maker);
+    if (filter.filter_data.decision_maker !== undefined && filter.filter_data.decision_maker !== null) {
+      params.set('decision_maker', String(filter.filter_data.decision_maker));
+      newLocalFilters.decision_maker = String(filter.filter_data.decision_maker);
     }
-    if (filter.pain_points) {
-      params.set('pain_points', filter.pain_points);
-      newLocalFilters.pain_points = filter.pain_points;
+    if (filter.filter_data.pain_points) {
+      params.set('pain_points', filter.filter_data.pain_points);
+      newLocalFilters.pain_points = filter.filter_data.pain_points;
     }
 
     setActiveFilterId(filterId);
@@ -142,26 +142,28 @@ export default function MeetingFilters() {
       return;
     }
 
-    const filterData = {
+    const requestBody = {
       name: filterName,
       description: filterDescription,
-      sales_rep: localFilters.salesRep || undefined,
-      closed: localFilters.closed ? localFilters.closed === 'true' : undefined,
-      date_from: localFilters.date_from || undefined,
-      date_to: localFilters.date_to || undefined,
-      sector: localFilters.sector || undefined,
-      company_size: localFilters.company_size || undefined,
-      discovery_channel: localFilters.discovery_channel || undefined,
-      budget_range: localFilters.budget_range || undefined,
-      decision_maker: localFilters.decision_maker ? localFilters.decision_maker === 'true' : undefined,
-      pain_points: localFilters.pain_points || undefined,
+      filter_data: {
+        sales_rep: localFilters.salesRep || undefined,
+        closed: localFilters.closed ? localFilters.closed === 'true' : undefined,
+        date_from: localFilters.date_from || undefined,
+        date_to: localFilters.date_to || undefined,
+        sector: localFilters.sector || undefined,
+        company_size: localFilters.company_size || undefined,
+        discovery_channel: localFilters.discovery_channel || undefined,
+        budget_range: localFilters.budget_range || undefined,
+        decision_maker: localFilters.decision_maker ? localFilters.decision_maker === 'true' : undefined,
+        pain_points: localFilters.pain_points || undefined,
+      },
     };
 
     try {
       const response = await fetch('/api/filters', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(filterData),
+        body: JSON.stringify(requestBody),
       });
 
       if (response.ok) {

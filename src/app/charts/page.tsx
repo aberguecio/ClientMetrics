@@ -102,6 +102,7 @@ export default function ChartsPage() {
               key={chart.id}
               chart={chart}
               viewFilterIds={[]}
+              chartFilterId={chart.chart_filter_id}
               onEdit={() => handleEditChart(chart)}
               onDelete={() => handleDeleteChart(chart.id)}
             />

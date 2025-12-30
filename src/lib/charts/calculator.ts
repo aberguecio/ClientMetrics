@@ -16,11 +16,16 @@ export async function calculateChartData(
   viewFilters: SavedFilter[],
   chartFilter?: SavedFilter
 ): Promise<ChartData[]> {
+  console.log('🎯 [CALCULATOR] Starting calculation for chart:', chart.id);
+  console.log('📊 [CALCULATOR] View filters:', viewFilters.length);
+  console.log('📊 [CALCULATOR] Chart filter:', chartFilter ? 'Yes' : 'No');
+
   // 1. Merge all filters (view + chart)
   const mergedFilter = mergeFilters(viewFilters, chartFilter);
 
   // 2. Fetch meetings with merged filters
   const meetings = await getMeetingsWithFilters(mergedFilter);
+  console.log('📊 [CALCULATOR] Meetings fetched:', meetings.length);
 
   // 3. Determine grouping field based on chart type
   // For pie charts: use group_by
