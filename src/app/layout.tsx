@@ -26,8 +26,6 @@ export default function RootLayout({
                 <h1 className={styles.logo}>Client Metrics</h1>
                 <div className={styles.navLinks}>
                   <a href="/">Dashboard</a>
-                  <a href="/views">Views</a>
-                  <a href="/charts">Charts</a>
                   <a href="/meetings">Meetings</a>
                   <a href="/upload">Upload</a>
                 </div>

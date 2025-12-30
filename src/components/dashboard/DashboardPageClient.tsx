@@ -10,7 +10,7 @@ import DashboardActions from './DashboardActions';
 import ChartBuilderModal from '@/components/charts/ChartBuilderModal';
 import ViewManager from '@/components/views/ViewManager';
 import FilterBuilder from '@/components/filters/FilterBuilder';
-import type { SavedView } from '@/types/charts';
+import type { SavedView, SavedFilter } from '@/types/charts';
 
 export default function DashboardPageClient() {
   const {
@@ -30,6 +30,8 @@ export default function DashboardPageClient() {
   const { view, loading, error } = useViewData(activeViewId, refreshKey);
   const [views, setViews] = useState<SavedView[]>([]);
   const [viewsLoading, setViewsLoading] = useState(false);
+  const [allFilters, setAllFilters] = useState<SavedFilter[]>([]);
+  const [activeFilterIds, setActiveFilterIds] = useState<string[]>([]);
 
   // Load all views for selector
   useEffect(() => {
@@ -49,6 +51,31 @@ export default function DashboardPageClient() {
     }
     fetchViews();
   }, [refreshKey]);
+
+  // Load all available filters
+  useEffect(() => {
+    async function fetchFilters() {
+      try {
+        const response = await fetch('/api/filters');
+        if (response.ok) {
+          const data = await response.json();
+          setAllFilters(data);
+        }
+      } catch (error) {
+        console.error('Error fetching filters:', error);
+      }
+    }
+    fetchFilters();
+  }, [refreshKey]);
+
+  // Initialize active filters with view's default filters
+  useEffect(() => {
+    if (view?.filters) {
+      setActiveFilterIds(view.filters.map(f => f.id));
+    } else {
+      setActiveFilterIds([]);
+    }
+  }, [view]);
 
   // Load default view on mount
   useEffect(() => {
@@ -89,12 +116,53 @@ export default function DashboardPageClient() {
     }
   }
 
+  async function handleDeleteView() {
+    if (!activeViewId) return;
+
+    if (!confirm('Are you sure you want to delete this view?')) return;
+
+    try {
+      const response = await fetch(`/api/views/${activeViewId}`, {
+        method: 'DELETE',
+      });
+
+      if (response.ok) {
+        setActiveViewId(null);
+        refresh();
+      } else {
+        alert('Failed to delete view');
+      }
+    } catch (error) {
+      console.error('Error deleting view:', error);
+      alert('Error deleting view');
+    }
+  }
+
+  function handleEditView() {
+    if (view) {
+      openViewModal(view);
+    }
+  }
+
+  function handleFilterToggle(filterId: string) {
+    setActiveFilterIds(prev => {
+      if (prev.includes(filterId)) {
+        return prev.filter(id => id !== filterId);
+      } else {
+        return [...prev, filterId];
+      }
+    });
+  }
+
   return (
     <div className="container">
       <DashboardHeader
         views={views}
         activeViewId={activeViewId}
         onViewChange={setActiveViewId}
+        allFilters={allFilters}
+        activeFilterIds={activeFilterIds}
+        onFilterToggle={handleFilterToggle}
       />
 
       <StatsRow view={view} />
@@ -107,6 +175,7 @@ export default function DashboardPageClient() {
 
       <DashboardViewContent
         view={view}
+        activeFilterIds={activeFilterIds}
         onRefresh={refresh}
         onEditChart={openChartModal}
         onDeleteChart={handleDeleteChart}
@@ -114,8 +183,11 @@ export default function DashboardPageClient() {
 
       <DashboardActions
         onCreateChart={() => openChartModal()}
-        onManageView={() => openViewModal()}
+        onCreateView={() => openViewModal()}
+        onEditView={handleEditView}
+        onDeleteView={handleDeleteView}
         onManageFilters={() => openFilterModal()}
+        hasActiveView={!!activeViewId}
       />
 
       {/* Modals */}

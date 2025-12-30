@@ -7,20 +7,20 @@ import styles from './ChartCard.module.css';
 
 interface ChartCardProps {
   chart: SavedChart;
-  viewFilterIds?: string[];
+  activeFilterIds?: string[];
   chartFilterId?: string;
   onEdit?: () => void;
   onDelete?: () => void;
 }
 
-export default function ChartCard({ chart, viewFilterIds, chartFilterId, onEdit, onDelete }: ChartCardProps) {
+export default function ChartCard({ chart, activeFilterIds, chartFilterId, onEdit, onDelete }: ChartCardProps) {
   const [data, setData] = useState<ChartData[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     fetchChartData();
-  }, [chart.id, viewFilterIds, chartFilterId]);
+  }, [chart.id, activeFilterIds, chartFilterId]);
 
   async function fetchChartData() {
     try {
@@ -32,7 +32,7 @@ export default function ChartCard({ chart, viewFilterIds, chartFilterId, onEdit,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           chart_id: chart.id,
-          view_filter_ids: viewFilterIds,
+          view_filter_ids: activeFilterIds,
           chart_filter_id: chartFilterId,
         }),
       });

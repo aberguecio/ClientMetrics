@@ -6,14 +6,14 @@ import styles from './ChartsGrid.module.css';
 
 interface ChartsGridProps {
   charts: Array<SavedChart & { chart_filter?: SavedFilter }>;
-  viewFilterIds: string[];
+  activeFilterIds: string[];
   onEdit: (chart: SavedChart) => void;
   onDelete: (chartId: string) => void;
 }
 
 export default function ChartsGrid({
   charts,
-  viewFilterIds,
+  activeFilterIds,
   onEdit,
   onDelete,
 }: ChartsGridProps) {
@@ -32,7 +32,7 @@ export default function ChartsGrid({
         <ChartCard
           key={chart.id}
           chart={chart}
-          viewFilterIds={viewFilterIds}
+          activeFilterIds={activeFilterIds}
           chartFilterId={chart.chart_filter?.id}
           onEdit={() => onEdit(chart)}
           onDelete={() => onDelete(chart.id)}

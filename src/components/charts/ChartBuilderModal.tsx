@@ -129,15 +129,28 @@ export default function ChartBuilderModal({
   const [filters, setFilters] = useState<SavedFilter[]>([]);
   const [saving, setSaving] = useState(false);
 
-  // Fetch filters when modal opens
+  // Reset form when editChart changes or modal opens
   useEffect(() => {
     if (isOpen) {
+      // Reset to edit chart values or defaults
+      setName(editChart?.name || '');
+      setDescription(editChart?.description || '');
+      setChartType(editChart?.chart_type || 'bar');
+      setXAxis(editChart?.x_axis || '');
+      setYAxis(editChart?.y_axis || 'count');
+      setGroupBy(editChart?.group_by || '');
+      setAggregation(editChart?.aggregation || 'count');
+      setColors(editChart?.colors || '');
+      setChartFilterId(editChart?.chart_filter_id || '');
+      setStep(1);
+
+      // Fetch filters
       fetch('/api/filters')
         .then((r) => r.json())
         .then((data) => setFilters(data))
         .catch((err) => console.error('Error fetching filters:', err));
     }
-  }, [isOpen]);
+  }, [isOpen, editChart]);
 
   if (!isOpen) return null;
 

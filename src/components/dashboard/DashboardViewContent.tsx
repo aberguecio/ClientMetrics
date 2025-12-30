@@ -1,12 +1,12 @@
 'use client';
 
-import ActiveFiltersDisplay from './ActiveFiltersDisplay';
 import ChartsGrid from './ChartsGrid';
 import type { ViewWithDetails, SavedChart } from '@/types/charts';
 import styles from './DashboardViewContent.module.css';
 
 interface DashboardViewContentProps {
   view: ViewWithDetails | null;
+  activeFilterIds: string[];
   onRefresh: () => void;
   onEditChart: (chart: SavedChart) => void;
   onDeleteChart: (chartId: string) => void;
@@ -14,6 +14,7 @@ interface DashboardViewContentProps {
 
 export default function DashboardViewContent({
   view,
+  activeFilterIds,
   onRefresh,
   onEditChart,
   onDeleteChart,
@@ -27,8 +28,6 @@ export default function DashboardViewContent({
     );
   }
 
-  const viewFilterIds = view.filters.map(f => f.id);
-
   return (
     <div className={styles.dashboardViewContent}>
       <div className={styles.viewHeader}>
@@ -40,11 +39,9 @@ export default function DashboardViewContent({
         </div>
       </div>
 
-      <ActiveFiltersDisplay filters={view.filters} />
-
       <ChartsGrid
         charts={view.charts}
-        viewFilterIds={viewFilterIds}
+        activeFilterIds={activeFilterIds}
         onEdit={onEditChart}
         onDelete={onDeleteChart}
       />
