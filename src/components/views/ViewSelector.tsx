@@ -8,23 +8,44 @@ import styles from './ViewSelector.module.css';
 interface ViewSelectorProps {
   currentViewId?: string;
   showCreateButton?: boolean;
+  // New props for in-place mode (dashboard)
+  views?: SavedView[];
+  activeViewId?: string | null;
+  onChange?: (viewId: string) => void;
+  inPlaceMode?: boolean;
 }
 
-export default function ViewSelector({ currentViewId, showCreateButton = true }: ViewSelectorProps) {
+export default function ViewSelector({
+  currentViewId,
+  showCreateButton = true,
+  views: propViews,
+  activeViewId,
+  onChange,
+  inPlaceMode = false,
+}: ViewSelectorProps) {
   const router = useRouter();
-  const [views, setViews] = useState<SavedView[]>([]);
+  const [localViews, setLocalViews] = useState<SavedView[]>([]);
   const [loading, setLoading] = useState(true);
 
+  // Use prop views if provided (in-place mode), otherwise fetch
+  const views = inPlaceMode && propViews ? propViews : localViews;
+  const selectedId = inPlaceMode ? activeViewId : currentViewId;
+
   useEffect(() => {
-    fetchViews();
-  }, []);
+    // Only fetch if not in in-place mode
+    if (!inPlaceMode) {
+      fetchViews();
+    } else {
+      setLoading(false);
+    }
+  }, [inPlaceMode]);
 
   async function fetchViews() {
     try {
       const response = await fetch('/api/views');
       if (!response.ok) throw new Error('Failed to fetch views');
       const data = await response.json();
-      setViews(data);
+      setLocalViews(data);
     } catch (error) {
       console.error('Error fetching views:', error);
     } finally {
@@ -33,14 +54,18 @@ export default function ViewSelector({ currentViewId, showCreateButton = true }:
   }
 
   function handleViewChange(viewId: string) {
-    if (viewId === 'create') {
-      // Redirect to views page where user can create new view
-      router.push('/views');
-    } else if (viewId) {
-      router.push(`/views/${viewId}`);
+    if (inPlaceMode && onChange) {
+      // In-place mode: use callback
+      onChange(viewId);
     } else {
-      // Empty value means default dashboard
-      router.push('/');
+      // Navigation mode: use router
+      if (viewId === 'create') {
+        router.push('/views');
+      } else if (viewId) {
+        router.push(`/views/${viewId}`);
+      } else {
+        router.push('/');
+      }
     }
   }
 
@@ -51,18 +76,18 @@ export default function ViewSelector({ currentViewId, showCreateButton = true }:
       </label>
       <select
         id="view-selector"
-        value={currentViewId || ''}
+        value={selectedId || ''}
         onChange={(e) => handleViewChange(e.target.value)}
         disabled={loading}
         className={styles.select}
       >
-        <option value="">Dashboard (Default)</option>
+        <option value="">Select View...</option>
         {views.map((view) => (
           <option key={view.id} value={view.id}>
             {view.name} {view.is_default ? '(Default)' : ''}
           </option>
         ))}
-        {showCreateButton && <option value="create">+ Create New View</option>}
+        {showCreateButton && !inPlaceMode && <option value="create">+ Create New View</option>}
       </select>
     </div>
   );

@@ -9,8 +9,11 @@ import styles from './ChartBuilderModal.module.css';
 interface ChartBuilderModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSave: (chart: SavedChart) => void;
+  onSave?: ((chart: SavedChart) => void) | (() => void); // Can be callback with chart or just refresh
   editChart?: SavedChart;
+  // New props for dashboard integration
+  currentViewId?: string | null;
+  autoAddToView?: boolean;
 }
 
 // Field configuration interface
@@ -105,7 +108,14 @@ function getFieldsForChartType(type: ChartType): FieldConfig[] {
   }
 }
 
-export default function ChartBuilderModal({ isOpen, onClose, editChart }: ChartBuilderModalProps) {
+export default function ChartBuilderModal({
+  isOpen,
+  onClose,
+  editChart,
+  onSave,
+  currentViewId,
+  autoAddToView = false,
+}: ChartBuilderModalProps) {
   const [step, setStep] = useState(1);
   const [name, setName] = useState(editChart?.name || '');
   const [description, setDescription] = useState(editChart?.description || '');
@@ -200,7 +210,43 @@ export default function ChartBuilderModal({ isOpen, onClose, editChart }: ChartB
       }
 
       const savedChart = await response.json();
-      window.location.reload(); // Refresh to show new chart
+
+      // Auto-add to view if requested
+      if (autoAddToView && currentViewId && !editChart) {
+        try {
+          // Calculate max position from current view
+          const viewResponse = await fetch(`/api/views/${currentViewId}`);
+          if (viewResponse.ok) {
+            const viewData = await viewResponse.json();
+            const maxPosition = viewData.charts?.length > 0
+              ? Math.max(...viewData.charts.map((c: any) => c.position || 0))
+              : -1;
+
+            // Add chart to view
+            await fetch(`/api/views/${currentViewId}/charts`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                chart_id: savedChart.id,
+                position: maxPosition + 1,
+                width: 'full',
+              }),
+            });
+          }
+        } catch (addError) {
+          console.error('Error adding chart to view:', addError);
+          // Don't fail the whole operation if auto-add fails
+        }
+      }
+
+      // Call onSave callback or reload
+      if (onSave) {
+        onSave(savedChart);
+      } else {
+        window.location.reload();
+      }
+
+      onClose();
     } catch (error) {
       alert('Error saving chart: ' + (error instanceof Error ? error.message : 'Unknown error'));
     } finally {

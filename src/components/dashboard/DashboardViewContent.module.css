@@ -1,0 +1,37 @@
+.dashboardViewContent {
+  margin-top: 2rem;
+}
+
+.viewHeader {
+  margin-bottom: 1.5rem;
+}
+
+.viewHeader h2 {
+  margin: 0 0 0.5rem 0;
+  font-size: 1.5rem;
+  font-weight: 600;
+}
+
+.objective {
+  color: var(--text-secondary);
+  font-size: 1.125rem;
+  margin: 0;
+}
+
+.emptyViewState {
+  text-align: center;
+  padding: 6rem 2rem;
+  background-color: var(--bg-secondary);
+  border-radius: 0.5rem;
+  margin-top: 2rem;
+}
+
+.emptyViewState h2 {
+  color: var(--text-primary);
+  margin-bottom: 0.75rem;
+}
+
+.emptyViewState p {
+  color: var(--text-secondary);
+  font-size: 1.125rem;
+}

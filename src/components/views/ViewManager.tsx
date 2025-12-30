@@ -9,9 +9,10 @@ interface ViewManagerProps {
   isOpen: boolean;
   onClose: () => void;
   editView?: SavedView;
+  onSave?: () => void; // Callback for refresh instead of reload
 }
 
-export default function ViewManager({ isOpen, onClose, editView }: ViewManagerProps) {
+export default function ViewManager({ isOpen, onClose, editView, onSave }: ViewManagerProps) {
   const [name, setName] = useState(editView?.name || '');
   const [objective, setObjective] = useState(editView?.objective || '');
   const [isDefault, setIsDefault] = useState(editView?.is_default || false);
@@ -46,7 +47,14 @@ export default function ViewManager({ isOpen, onClose, editView }: ViewManagerPr
         throw new Error('Failed to save view');
       }
 
-      window.location.reload(); // Refresh to show new view
+      // Call onSave callback or reload
+      if (onSave) {
+        onSave();
+      } else {
+        window.location.reload();
+      }
+
+      onClose();
     } catch (error) {
       alert('Error saving view: ' + (error instanceof Error ? error.message : 'Unknown error'));
     } finally {

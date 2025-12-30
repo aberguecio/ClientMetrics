@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getAllCharts, createChart } from '@/lib/charts/queries';
+import { getAllCharts, createChart, addChartToView, getViewWithDetails } from '@/lib/charts/queries';
 import { mapChartToApi } from '@/lib/charts/mappers';
 
 // GET /api/charts - List all charts
@@ -77,6 +77,28 @@ export async function POST(request: Request) {
       timeGroup: body.time_group || null,
       colors: body.colors || null,
     });
+
+    // Auto-add to view if view_id is provided
+    if (body.view_id) {
+      try {
+        // Get current view to calculate position
+        const viewData = await getViewWithDetails(body.view_id);
+        const maxPosition = viewData?.charts && viewData.charts.length > 0
+          ? Math.max(...viewData.charts.map((c: any) => c.position || 0))
+          : -1;
+
+        await addChartToView({
+          viewId: body.view_id,
+          chartId: newChart.id,
+          position: maxPosition + 1,
+          width: body.width || 'full',
+          chartFilterId: body.chart_filter_id || null,
+        });
+      } catch (addError) {
+        console.error('Error adding chart to view:', addError);
+        // Continue anyway - the chart was created successfully
+      }
+    }
 
     return NextResponse.json(mapChartToApi(newChart), { status: 201 });
   } catch (error) {

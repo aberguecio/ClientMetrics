@@ -115,6 +115,24 @@ export async function getViewById(id: string) {
 }
 
 /**
+ * Get the default view with all its details
+ */
+export async function getDefaultView() {
+  const results = await db
+    .select()
+    .from(savedViews)
+    .where(eq(savedViews.isDefault, true))
+    .limit(1);
+
+  const view = results[0] || null;
+
+  if (!view) return null;
+
+  // Return with full details
+  return await getViewWithDetails(view.id);
+}
+
+/**
  * Get a view with all its charts and filters
  */
 export async function getViewWithDetails(viewId: string) {

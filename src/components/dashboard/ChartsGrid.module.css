@@ -1,0 +1,24 @@
+.chartsGrid {
+  display: grid;
+  gap: 2rem;
+  grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+  margin-top: 2rem;
+}
+
+.emptyState {
+  text-align: center;
+  padding: 4rem 2rem;
+  background-color: var(--bg-secondary);
+  border-radius: 0.5rem;
+  margin-top: 2rem;
+}
+
+.emptyState p {
+  color: var(--text-secondary);
+  margin-bottom: 0.5rem;
+}
+
+.hint {
+  font-size: 0.875rem;
+  opacity: 0.8;
+}
