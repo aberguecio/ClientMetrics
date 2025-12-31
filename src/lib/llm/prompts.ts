@@ -97,9 +97,7 @@ NEW FIELDS:
   * by_product_or_service: Product-specific responses
 
 - requirements.integrations: Array of integrations mentioned or implied (can be empty [])
-  * calendar: Calendar integration
-  * appointments: Appointment scheduling
-  * reservations: Reservation system
+  * scheduling: Calendar, appointments, or reservation system integration
   * crm: CRM integration
   * ticketing: Support ticket system
   * ecommerce: E-commerce platform
@@ -119,14 +117,12 @@ NEW FIELDS:
   * events: Special events/campaigns
 
 - query_types: Array of query types the client handles (can be empty [])
-  * pricing: Price inquiries
+  * pricing: Price inquiries and quotations
   * availability: Stock/availability
   * shipping: Delivery questions
   * returns: Return policy
-  * reservations: Booking/reservations
-  * schedules: Hours/schedules
+  * scheduling: Booking/reservations and hours/schedules
   * technical_support: Technical help
-  * quotations: Quote requests
   * regulations: Compliance/regulations
   * product_specs: Product specifications
 

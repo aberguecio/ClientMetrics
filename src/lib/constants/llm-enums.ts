@@ -108,9 +108,7 @@ export const PERSONALIZATION_LABELS: Record<PersonalizationValue, string> = {
 
 // Integration types
 export const INTEGRATION_VALUES = [
-  'calendar',
-  'appointments',
-  'reservations',
+  'scheduling',
   'crm',
   'ticketing',
   'ecommerce',
@@ -122,9 +120,7 @@ export const INTEGRATION_VALUES = [
 export type IntegrationValue = typeof INTEGRATION_VALUES[number];
 
 export const INTEGRATION_LABELS: Record<IntegrationValue, string> = {
-  calendar: 'Calendario',
-  appointments: 'Citas',
-  reservations: 'Reservaciones',
+  scheduling: 'Calendario / Citas / Reservaciones',
   crm: 'CRM',
   ticketing: 'Ticketing',
   ecommerce: 'E-commerce',
@@ -158,10 +154,8 @@ export const QUERY_TYPE_VALUES = [
   'availability',
   'shipping',
   'returns',
-  'reservations',
-  'schedules',
+  'scheduling',
   'technical_support',
-  'quotations',
   'regulations',
   'product_specs',
 ] as const;
@@ -169,14 +163,12 @@ export const QUERY_TYPE_VALUES = [
 export type QueryTypeValue = typeof QUERY_TYPE_VALUES[number];
 
 export const QUERY_TYPE_LABELS: Record<QueryTypeValue, string> = {
-  pricing: 'Precios',
+  pricing: 'Precios y Cotizaciones',
   availability: 'Disponibilidad',
   shipping: 'Envíos',
   returns: 'Devoluciones',
-  reservations: 'Reservaciones',
-  schedules: 'Horarios',
+  scheduling: 'Reservaciones y Horarios',
   technical_support: 'Soporte técnico',
-  quotations: 'Cotizaciones',
   regulations: 'Regulaciones',
   product_specs: 'Especificaciones de productos',
 };
