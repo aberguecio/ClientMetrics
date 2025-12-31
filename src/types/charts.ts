@@ -1,4 +1,4 @@
-export type ChartType = 'pie' | 'bar' | 'line' | 'area';
+export type ChartType = 'pie' | 'bar' | 'line' | 'area' | 'wordcloud';
 
 export type AggregationType = 'count' | 'sum' | 'avg' | 'min' | 'max';
 
@@ -27,13 +27,29 @@ export interface FilterData {
   closed?: boolean;
   date_from?: string;
   date_to?: string;
-  // Campos LLM
+
+  // Campos LLM - Enums cerrados (single value)
   sector?: string;
   company_size?: string;
   discovery_channel?: string;
+
+  // Campos LLM - Arrays abiertos (membership test)
   pain_points?: string;
   budget_range?: string;
   decision_maker?: boolean;
+
+  // NEW: Campos LLM - Booleanos
+  'requirements.confidentiality'?: boolean;
+  'requirements.multilingual'?: boolean;
+  'requirements.real_time'?: boolean;
+
+  // NEW: Campos LLM - Arrays cerrados (multi-select OR)
+  'requirements.personalization'?: string[]; // Array of selected values
+  'requirements.integrations'?: string[];
+  demand_peaks?: string[];
+  query_types?: string[];
+  tools_mentioned?: string[];
+
   [key: string]: any; // Permite futuros campos sin migración de schema
 }
 
@@ -77,4 +93,10 @@ export interface ChartData {
   label: string;
   value: number;
   [key: string]: any;
+}
+
+// Tipo para datos de word cloud
+export interface WordCloudData {
+  text: string;
+  value: number;
 }

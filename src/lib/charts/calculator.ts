@@ -1,6 +1,6 @@
 import { getMeetingsWithFilters } from '@/lib/filters/builder';
 import { mergeFilters } from '@/lib/filters/merger';
-import type { SavedChart, SavedFilter, ChartData, AggregationType, TimeGrouping } from '@/types/charts';
+import type { SavedChart, SavedFilter, ChartData, WordCloudData, AggregationType, TimeGrouping } from '@/types/charts';
 import type { SalesMeeting } from '@/lib/db/schema';
 
 /**
@@ -15,7 +15,7 @@ export async function calculateChartData(
   chart: SavedChart,
   viewFilters: SavedFilter[],
   chartFilter?: SavedFilter
-): Promise<ChartData[]> {
+): Promise<ChartData[] | WordCloudData[]> {
   console.log('🎯 [CALCULATOR] Starting calculation for chart:', chart.id);
   console.log('📊 [CALCULATOR] View filters:', viewFilters.length);
   console.log('📊 [CALCULATOR] Chart filter:', chartFilter ? 'Yes' : 'No');
@@ -27,12 +27,34 @@ export async function calculateChartData(
   const meetings = await getMeetingsWithFilters(mergedFilter);
   console.log('📊 [CALCULATOR] Meetings fetched:', meetings.length);
 
-  // 3. Determine grouping field based on chart type
+  // 3. Handle wordcloud chart type
+  if (chart.chart_type === 'wordcloud') {
+    return calculateWordCloudData(meetings, chart);
+  }
+
+  // 4. Determine grouping field based on chart type
   // For pie charts: use group_by
   // For bar/line/area: use x_axis for primary grouping, group_by for series
   const primaryGroupField = chart.chart_type === 'pie' ? chart.group_by : chart.x_axis;
 
-  // 4. Check if we need multiple series (bar/line/area with group_by)
+  // 5. NEW: Detect if primary field is a closed array field
+  const closedArrayFields = [
+    'requirements.personalization',
+    'requirements.integrations',
+    'demand_peaks',
+    'query_types',
+    'tools_mentioned',
+  ];
+
+  if (closedArrayFields.includes(primaryGroupField)) {
+    // Use frequency calculation for closed array fields
+    return calculateClosedArrayFrequency(meetings, {
+      ...chart,
+      x_axis: primaryGroupField, // Ensure x_axis is set to the field being analyzed
+    });
+  }
+
+  // 5. Check if we need multiple series (bar/line/area with group_by)
   const needsMultipleSeries = chart.chart_type !== 'pie' && chart.group_by && chart.group_by.trim() !== '';
 
   if (needsMultipleSeries) {
@@ -191,13 +213,38 @@ export function groupByField(
     if (field === 'meetingDate' && timeGroup) {
       key = formatDateByGroup(meeting.meetingDate, timeGroup);
     }
+    // NEW: Check if it's a nested field (e.g., 'requirements.confidentiality')
+    else if (field.includes('.')) {
+      const value = getNestedValue(meeting.analysis, field);
+
+      // Handle boolean fields: convert to 'Sí' / 'No'
+      if (typeof value === 'boolean') {
+        key = value ? 'Sí' : 'No';
+      } else {
+        key = String(value ?? 'Unknown');
+      }
+    }
     // Check if it's a field from sales_meetings table
     else if (field in meeting) {
-      key = String((meeting as any)[field] ?? 'Unknown');
+      const value = (meeting as any)[field];
+
+      // Handle boolean fields
+      if (typeof value === 'boolean') {
+        key = value ? 'Sí' : 'No';
+      } else {
+        key = String(value ?? 'Unknown');
+      }
     }
-    // Otherwise, check in analysis JSON
+    // Otherwise, check in analysis JSON (top-level only)
     else if (meeting.analysis && field in meeting.analysis) {
-      key = String(meeting.analysis[field] ?? 'Unknown');
+      const value = meeting.analysis[field];
+
+      // Handle boolean fields
+      if (typeof value === 'boolean') {
+        key = value ? 'Sí' : 'No';
+      } else {
+        key = String(value ?? 'Unknown');
+      }
     }
     // Default to Unknown
     else {
@@ -333,4 +380,139 @@ export function formatForChart(
   chartData.sort((a, b) => b.value - a.value);
 
   return chartData;
+}
+
+/**
+ * Get a nested field value from an object using dot notation
+ * Example: getNestedValue({a: {b: 'c'}}, 'a.b') => 'c'
+ */
+function getNestedValue(obj: any, path: string): any {
+  return path.split('.').reduce((current, key) => current?.[key], obj);
+}
+
+/**
+ * Calculates frequency data for closed enum arrays
+ * Used for fields like: requirements.integrations, demand_peaks, query_types, tools_mentioned
+ *
+ * @param meetings - Array of meetings with analysis data
+ * @param chart - Chart configuration (x_axis contains the field path)
+ * @returns Array of chart data with label (enum value) and value (frequency count)
+ */
+export function calculateClosedArrayFrequency(
+  meetings: Array<SalesMeeting & { analysis?: any }>,
+  chart: SavedChart
+): ChartData[] {
+  const frequencyMap = new Map<string, number>();
+  const fieldPath = chart.x_axis; // e.g., 'requirements.integrations', 'demand_peaks'
+
+  // Import label mappings
+  const {
+    INTEGRATION_LABELS,
+    PERSONALIZATION_LABELS,
+    DEMAND_PEAK_LABELS,
+    QUERY_TYPE_LABELS,
+    TOOL_LABELS,
+  } = require('@/lib/constants/llm-enums');
+
+  // Determine which label mapping to use based on field path
+  let labelMap: Record<string, string> = {};
+  if (fieldPath.includes('integrations')) labelMap = INTEGRATION_LABELS;
+  else if (fieldPath.includes('personalization')) labelMap = PERSONALIZATION_LABELS;
+  else if (fieldPath === 'demand_peaks') labelMap = DEMAND_PEAK_LABELS;
+  else if (fieldPath === 'query_types') labelMap = QUERY_TYPE_LABELS;
+  else if (fieldPath === 'tools_mentioned') labelMap = TOOL_LABELS;
+
+  for (const meeting of meetings) {
+    if (!meeting.analysis) continue;
+
+    // Get the array value using nested path (e.g., analysis.requirements.integrations)
+    const arrayValue = getNestedValue(meeting.analysis, fieldPath);
+
+    if (Array.isArray(arrayValue)) {
+      for (const item of arrayValue) {
+        if (item && typeof item === 'string') {
+          frequencyMap.set(item, (frequencyMap.get(item) || 0) + 1);
+        }
+      }
+    }
+  }
+
+  // Convert to ChartData format with human-readable labels
+  const chartData: ChartData[] = Array.from(frequencyMap.entries())
+    .map(([key, value]) => ({
+      label: labelMap[key] || key, // Use label mapping or fallback to key
+      value,
+      raw_key: key, // Keep original for filtering
+    }))
+    .sort((a, b) => b.value - a.value); // Sort by frequency descending
+
+  return chartData;
+}
+
+/**
+ * Calculates word cloud data from LLM analysis text fields
+ *
+ * @param meetings - Array of meetings with analysis data
+ * @param chart - Chart configuration (x_axis contains the field name)
+ * @returns Array of word cloud data with text and frequency
+ */
+export function calculateWordCloudData(
+  meetings: Array<SalesMeeting & { analysis?: any }>,
+  chart: SavedChart
+): WordCloudData[] {
+  const wordMap = new Map<string, number>();
+  const fieldName = chart.x_axis; // 'pain_points', 'use_cases', 'objections', 'others'
+  const MIN_FREQUENCY = 2;
+  const MIN_WORD_LENGTH = 3; // Ignorar palabras muy cortas
+
+  // Palabras comunes a ignorar (stop words en español)
+  const stopWords = new Set([
+    'el', 'la', 'de', 'que', 'y', 'a', 'en', 'un', 'ser', 'se', 'no', 'haber',
+    'por', 'con', 'su', 'para', 'como', 'estar', 'tener', 'le', 'lo', 'todo',
+    'pero', 'más', 'hacer', 'o', 'poder', 'decir', 'este', 'ir', 'otro', 'ese',
+    'la', 'si', 'me', 'ya', 'ver', 'porque', 'dar', 'cuando', 'él', 'muy',
+    'sin', 'vez', 'mucho', 'saber', 'qué', 'sobre', 'mi', 'alguno', 'mismo',
+    'yo', 'también', 'hasta', 'año', 'dos', 'querer', 'entre', 'así', 'primero',
+    'desde', 'grande', 'eso', 'ni', 'nos', 'llegar', 'pasar', 'tiempo', 'ella',
+    'del', 'los', 'las', 'una', 'es', 'al', 'son', 'the', 'of', 'and', 'to', 'in'
+  ]);
+
+  for (const meeting of meetings) {
+    if (!meeting.analysis) continue;
+
+    const fieldValue = meeting.analysis[fieldName];
+    let allText = '';
+
+    if (Array.isArray(fieldValue)) {
+      // For array fields: pain_points, use_cases, objections
+      allText = fieldValue.join(' ');
+    } else if (typeof fieldValue === 'string' && fieldValue.trim() !== '') {
+      // For 'others' field
+      allText = fieldValue;
+    }
+
+    // Split into words and process
+    if (allText) {
+      const words = allText
+        .toLowerCase()
+        .replace(/[^\w\sáéíóúñü]/g, ' ') // Remove punctuation but keep Spanish chars
+        .split(/\s+/)
+        .filter(word =>
+          word.length >= MIN_WORD_LENGTH &&
+          !stopWords.has(word) &&
+          !/^\d+$/.test(word) // Exclude pure numbers
+        );
+
+      for (const word of words) {
+        wordMap.set(word, (wordMap.get(word) || 0) + 1);
+      }
+    }
+  }
+
+  // Filter by minimum frequency, sort by frequency, and limit to top 50
+  return Array.from(wordMap.entries())
+    .filter(([_, count]) => count >= MIN_FREQUENCY)
+    .map(([text, value]) => ({ text, value }))
+    .sort((a, b) => b.value - a.value)
+    .slice(0, 50);
 }

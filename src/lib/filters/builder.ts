@@ -5,6 +5,13 @@ import type { MergedFilter } from '@/types/charts';
 import type { SalesMeeting } from '@/lib/db/schema';
 
 /**
+ * Get a nested field value from an object using dot notation
+ */
+function getNestedValue(obj: any, path: string): any {
+  return path.split('.').reduce((current, key) => current?.[key], obj);
+}
+
+/**
  * Builds a Drizzle query with dynamic WHERE conditions based on the provided filter
  *
  * @param filter - Merged filter object containing all filter criteria
@@ -109,6 +116,56 @@ export async function getMeetingsWithFilters(filter: MergedFilter): Promise<(Sal
       (m) => m.analysis && (m.analysis as any).decision_maker === filter.decision_maker
     );
     console.log('    Result:', filteredMeetings.length, 'meetings (filtered out', beforeFilter - filteredMeetings.length, ')');
+  }
+
+  // NEW: Boolean filters (nested path)
+  const booleanFilters: Array<keyof MergedFilter> = [
+    'requirements.confidentiality',
+    'requirements.multilingual',
+    'requirements.real_time',
+  ];
+
+  for (const field of booleanFilters) {
+    if (filter[field] !== undefined && filter[field] !== null) {
+      const beforeFilter = filteredMeetings.length;
+      console.log('  🔍 Filtering by', field, ':', filter[field]);
+      filteredMeetings = filteredMeetings.filter((m) => {
+        if (!m.analysis) return false;
+        const value = getNestedValue(m.analysis, field as string);
+        return value === filter[field];
+      });
+      console.log('    Result:', filteredMeetings.length, 'meetings (filtered out', beforeFilter - filteredMeetings.length, ')');
+    }
+  }
+
+  // NEW: Closed array filters (multi-select OR logic)
+  const closedArrayFilters: Array<keyof MergedFilter> = [
+    'requirements.personalization',
+    'requirements.integrations',
+    'demand_peaks',
+    'query_types',
+    'tools_mentioned',
+  ];
+
+  for (const field of closedArrayFilters) {
+    const selectedValues = filter[field];
+
+    if (Array.isArray(selectedValues) && selectedValues.length > 0) {
+      const beforeFilter = filteredMeetings.length;
+      console.log('  🔍 Filtering by', field, ':', selectedValues);
+      filteredMeetings = filteredMeetings.filter((m) => {
+        if (!m.analysis) return false;
+
+        // Get the array field value (e.g., meeting.analysis.tools_mentioned)
+        const arrayValue = getNestedValue(m.analysis, field as string);
+
+        if (!Array.isArray(arrayValue)) return false;
+
+        // OR logic: meeting passes if it has ANY of the selected values
+        return arrayValue.some(item => selectedValues.includes(item));
+      });
+      console.log('    Result:', filteredMeetings.length, 'meetings (filtered out', beforeFilter - filteredMeetings.length, ')');
+    }
   }
 
   console.log('✅ [BUILDER] Final result:', filteredMeetings.length, 'meetings');

@@ -32,7 +32,7 @@ function getFieldsForChartType(type: ChartType): FieldConfig[] {
         {
           name: 'category',
           label: 'Categoría *',
-          helpText: 'El campo que dividirá el pastel en sectores (ej: sector, sales_rep)',
+          helpText: 'El campo que dividirá el pastel en sectores (ej: sector, tools_mentioned)',
           showVariableSelector: true,
         },
         {
@@ -48,12 +48,27 @@ function getFieldsForChartType(type: ChartType): FieldConfig[] {
           showVariableSelector: false,
         },
       ];
+    case 'wordcloud':
+      return [
+        {
+          name: 'category',
+          label: 'Campo de Texto *',
+          helpText: 'Selecciona el campo de texto a analizar (pain points, use cases, etc.)',
+          showVariableSelector: true,
+        },
+        {
+          name: 'groupBy',
+          label: 'Filtrar Por (opcional)',
+          helpText: 'Opcional: filtrar por categoría antes de analizar',
+          showVariableSelector: true,
+        },
+      ];
     case 'bar':
       return [
         {
           name: 'category',
           label: 'Categorías (Eje X) *',
-          helpText: 'Las categorías que aparecerán como barras',
+          helpText: 'Las categorías que aparecerán como barras (ej: sector, demand_peaks)',
           showVariableSelector: true,
         },
         {
@@ -171,6 +186,12 @@ export default function ChartBuilderModal({
             errorMessage = 'Por favor completa categoría y métrica para gráfico de pastel';
           }
           break;
+        case 'wordcloud':
+          if (!xAxis) {
+            isValid = false;
+            errorMessage = 'Por favor selecciona un campo de texto para el word cloud';
+          }
+          break;
         case 'bar':
         case 'line':
         case 'area':
@@ -207,6 +228,11 @@ export default function ChartBuilderModal({
       if (chartType === 'pie') {
         payload.group_by = groupBy;
         payload.x_axis = ''; // Not used for pie charts
+      } else if (chartType === 'wordcloud') {
+        payload.x_axis = xAxis; // Stores the text field to analyze
+        payload.y_axis = 'count';
+        payload.aggregation = 'count';
+        payload.group_by = groupBy || '';
       } else {
         payload.x_axis = xAxis;
         payload.group_by = groupBy || ''; // Optional for bar/line/area (multiple series)
@@ -274,7 +300,7 @@ export default function ChartBuilderModal({
           <div>
             <h3 className={styles.stepTitle}>Step 1 of 3: Chart Type</h3>
             <div className={styles.chartTypeGrid}>
-              {(['pie', 'bar', 'line', 'area'] as ChartType[]).map((type) => (
+              {(['pie', 'bar', 'line', 'area', 'wordcloud'] as ChartType[]).map((type) => (
                 <button
                   key={type}
                   className={`${styles.chartTypeButton} ${chartType === type ? styles.active : ''}`}
@@ -285,6 +311,7 @@ export default function ChartBuilderModal({
                     {type === 'bar' && '📊'}
                     {type === 'line' && '📈'}
                     {type === 'area' && '📉'}
+                    {type === 'wordcloud' && '☁️'}
                   </div>
                   <div className={styles.chartTypeName}>
                     {type.charAt(0).toUpperCase() + type.slice(1)} Chart
@@ -333,7 +360,17 @@ export default function ChartBuilderModal({
                             setYAxis(value);
                           }
                         }}
-                        type={field.name === 'metric' ? 'metric' : 'category'}
+                        types={
+                          field.name === 'metric'
+                            ? ['metric']
+                            : chartType === 'wordcloud' && field.name === 'category'
+                            ? ['text_analysis']
+                            : field.name === 'category' && ['bar', 'line', 'area', 'pie'].includes(chartType)
+                            ? ['category', 'closed_array'] // Allow both for X-axis/Category
+                            : field.name === 'groupBy'
+                            ? ['category'] // Group by only accepts regular categories
+                            : ['category']
+                        }
                       />
                     </>
                   ) : (

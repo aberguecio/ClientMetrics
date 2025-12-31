@@ -46,10 +46,10 @@ export async function PUT(
 
     // Validate chart_type if provided
     if (body.chart_type) {
-      const validChartTypes = ['pie', 'bar', 'line', 'area'];
+      const validChartTypes = ['pie', 'bar', 'line', 'area', 'wordcloud'];
       if (!validChartTypes.includes(body.chart_type)) {
         return NextResponse.json(
-          { error: 'Invalid chart_type. Must be one of: pie, bar, line, area' },
+          { error: 'Invalid chart_type. Must be one of: pie, bar, line, area, wordcloud' },
           { status: 400 }
         );
       }

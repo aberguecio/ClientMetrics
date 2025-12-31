@@ -1,13 +1,14 @@
 'use client';
 
 import { PieChart, Pie, BarChart, Bar, LineChart, Line, AreaChart, Area, Cell, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from 'recharts';
-import type { SavedChart, ChartData } from '@/types/charts';
+import { Wordcloud } from '@visx/wordcloud';
+import type { SavedChart, ChartData, WordCloudData } from '@/types/charts';
 
 const DEFAULT_COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#06b6d4', '#84cc16'];
 
 interface ChartRendererProps {
   chart: SavedChart;
-  data: ChartData[];
+  data: ChartData[] | WordCloudData[];
 }
 
 // Helper function to get human-readable field labels
@@ -50,8 +51,8 @@ export default function ChartRenderer({ chart, data }: ChartRendererProps) {
 
   // Detect if we have multiple series (keys beyond 'label' and 'value')
   const seriesKeys: string[] = [];
-  if (data.length > 0) {
-    const samplePoint = data[0];
+  if (data.length > 0 && 'label' in data[0]) {
+    const samplePoint = data[0] as ChartData;
     for (const key in samplePoint) {
       if (key !== 'label' && key !== 'value') {
         seriesKeys.push(key);
@@ -62,12 +63,53 @@ export default function ChartRenderer({ chart, data }: ChartRendererProps) {
 
   // Render based on chart type
   switch (chart.chart_type) {
+    case 'wordcloud':
+      const wordCloudData = data as WordCloudData[];
+
+      return (
+        <ResponsiveContainer width="100%" height={300}>
+          <div style={{ width: '100%', height: '100%', position: 'relative' }}>
+            <svg width="100%" height="100%" style={{ position: 'absolute', top: 0, left: 0 }}>
+              <Wordcloud
+                words={wordCloudData}
+                width={800}
+                height={300}
+                fontSize={(datum) => Math.log2(datum.value + 1) * 10}
+                font="Arial"
+                padding={2}
+                spiral="archimedean"
+                rotate={0}
+                random={() => 0.5}
+              >
+                {(cloudWords) =>
+                  cloudWords.map((w, i) => (
+                    <text
+                      key={`${w.text}-${i}`}
+                      fontSize={w.size}
+                      fontFamily={w.font}
+                      fill={colors[i % colors.length]}
+                      textAnchor="middle"
+                      transform={`translate(${w.x}, ${w.y}) rotate(${w.rotate})`}
+                      style={{ cursor: 'pointer' }}
+                      title={`${w.text}: ${w.value} menciones`}
+                    >
+                      {w.text}
+                    </text>
+                  ))
+                }
+              </Wordcloud>
+            </svg>
+          </div>
+        </ResponsiveContainer>
+      );
+
     case 'pie':
+      const pieData = data as ChartData[];
       return (
         <ResponsiveContainer width="100%" height={300}>
           <PieChart>
             <Pie
-              data={data}
+              data={pieData}
               dataKey="value"
               nameKey="label"
               cx="50%"
@@ -75,7 +117,7 @@ export default function ChartRenderer({ chart, data }: ChartRendererProps) {
               outerRadius={100}
               label={(entry) => `${entry.label}: ${entry.value}`}
             >
-              {data.map((entry, index) => (
+              {pieData.map((entry, index) => (
                 <Cell key={`cell-${index}`} fill={colors[index % colors.length]} />
               ))}
             </Pie>
@@ -85,9 +127,10 @@ export default function ChartRenderer({ chart, data }: ChartRendererProps) {
       );
 
     case 'bar':
+      const barData = data as ChartData[];
       return (
         <ResponsiveContainer width="100%" height={300}>
-          <BarChart data={data}>
+          <BarChart data={barData}>
             <XAxis
               dataKey="label"
               label={{ value: getFieldLabel(chart.x_axis), position: 'insideBottom', offset: -5 }}
@@ -120,9 +163,10 @@ export default function ChartRenderer({ chart, data }: ChartRendererProps) {
       );
 
     case 'line':
+      const lineData = data as ChartData[];
       return (
         <ResponsiveContainer width="100%" height={300}>
-          <LineChart data={data}>
+          <LineChart data={lineData}>
             <XAxis
               dataKey="label"
               label={{ value: getFieldLabel(chart.x_axis), position: 'insideBottom', offset: -5 }}
@@ -156,9 +200,10 @@ export default function ChartRenderer({ chart, data }: ChartRendererProps) {
       );
 
     case 'area':
+      const areaData = data as ChartData[];
       return (
         <ResponsiveContainer width="100%" height={300}>
-          <AreaChart data={data}>
+          <AreaChart data={areaData}>
             <XAxis
               dataKey="label"
               label={{ value: getFieldLabel(chart.x_axis), position: 'insideBottom', offset: -5 }}

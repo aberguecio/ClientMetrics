@@ -4,7 +4,16 @@ import Link from 'next/link';
 import { formatDate } from '@/lib/utils';
 import type { MeetingDetail } from '@/types/api';
 import styles from './MeetingDetailView.module.css';
-import { SECTOR_LABELS, COMPANY_SIZE_LABELS, DISCOVERY_CHANNEL_LABELS } from '@/lib/constants/llm-enums';
+import {
+  SECTOR_LABELS,
+  COMPANY_SIZE_LABELS,
+  DISCOVERY_CHANNEL_LABELS,
+  PERSONALIZATION_LABELS,
+  INTEGRATION_LABELS,
+  DEMAND_PEAK_LABELS,
+  QUERY_TYPE_LABELS,
+  TOOL_LABELS,
+} from '@/lib/constants/llm-enums';
 
 interface MeetingDetailViewProps {
   meeting: MeetingDetail;
@@ -57,6 +66,8 @@ export default function MeetingDetailView({ meeting }: MeetingDetailViewProps) {
         <div className={styles.analysisSection}>
           <h2>Análisis de IA</h2>
 
+          {/* Información del Negocio */}
+          <h3>Información del Negocio</h3>
           <div className={styles.metricsGrid}>
             <div className={styles.metricCard}>
               <label>Sector</label>
@@ -74,13 +85,103 @@ export default function MeetingDetailView({ meeting }: MeetingDetailViewProps) {
               <label>Volumen de Interacciones Diarias</label>
               <p className={styles.metricValue}>{analysis.interaction_volume_daily || 'N/A'}</p>
             </div>
-            <div className={styles.metricCard}>
-              <label>Confianza (Sector)</label>
-              <p className={styles.metricValue}>{analysis.confidence?.sector ? `${(analysis.confidence.sector * 100).toFixed(0)}%` : 'N/A'}</p>
-            </div>
           </div>
 
-          {/* Detalles */}
+          {/* Requerimientos Técnicos */}
+          {analysis.requirements && (
+            <>
+              <h3 style={{ marginTop: '2rem' }}>Requerimientos Técnicos</h3>
+              <div className={styles.metricsGrid}>
+                <div className={styles.metricCard}>
+                  <label>Confidencialidad</label>
+                  <p className={styles.metricValue}>{analysis.requirements.confidentiality ? '✓ Sí' : '✗ No'}</p>
+                </div>
+                <div className={styles.metricCard}>
+                  <label>Multiidioma</label>
+                  <p className={styles.metricValue}>{analysis.requirements.multilingual ? '✓ Sí' : '✗ No'}</p>
+                </div>
+                <div className={styles.metricCard}>
+                  <label>Tiempo Real</label>
+                  <p className={styles.metricValue}>{analysis.requirements.real_time ? '✓ Sí' : '✗ No'}</p>
+                </div>
+                <div className={styles.metricCard}>
+                  <label>Confianza (Sector)</label>
+                  <p className={styles.metricValue}>{analysis.confidence?.sector ? `${(analysis.confidence.sector * 100).toFixed(0)}%` : 'N/A'}</p>
+                </div>
+              </div>
+
+              {/* Personalizaciones e Integraciones */}
+              <div className={styles.detailsGrid} style={{ marginTop: '1rem' }}>
+                {analysis.requirements.personalization && analysis.requirements.personalization.length > 0 && (
+                  <div className={styles.detailCard}>
+                    <h3>Tipos de Personalización</h3>
+                    <ul>
+                      {analysis.requirements.personalization.map((item, index) => (
+                        <li key={index}>{PERSONALIZATION_LABELS[item as keyof typeof PERSONALIZATION_LABELS] || item}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+                {analysis.requirements.integrations && analysis.requirements.integrations.length > 0 && (
+                  <div className={styles.detailCard}>
+                    <h3>Integraciones Requeridas</h3>
+                    <ul>
+                      {analysis.requirements.integrations.map((item, index) => (
+                        <li key={index}>{INTEGRATION_LABELS[item as keyof typeof INTEGRATION_LABELS] || item}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </div>
+            </>
+          )}
+
+          {/* Patrones de Negocio */}
+          {((analysis.demand_peaks && analysis.demand_peaks.length > 0) ||
+            (analysis.query_types && analysis.query_types.length > 0) ||
+            (analysis.tools_mentioned && analysis.tools_mentioned.length > 0)) && (
+            <>
+              <h3 style={{ marginTop: '2rem' }}>Patrones de Negocio</h3>
+              <div className={styles.detailsGrid}>
+                {analysis.demand_peaks && analysis.demand_peaks.length > 0 && (
+                  <div className={styles.detailCard}>
+                    <h3>Picos de Demanda</h3>
+                    <ul>
+                      {analysis.demand_peaks.map((item, index) => (
+                        <li key={index}>{DEMAND_PEAK_LABELS[item as keyof typeof DEMAND_PEAK_LABELS] || item}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+                {analysis.query_types && analysis.query_types.length > 0 && (
+                  <div className={styles.detailCard}>
+                    <h3>Tipos de Consultas</h3>
+                    <ul>
+                      {analysis.query_types.map((item, index) => (
+                        <li key={index}>{QUERY_TYPE_LABELS[item as keyof typeof QUERY_TYPE_LABELS] || item}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+                {analysis.tools_mentioned && analysis.tools_mentioned.length > 0 && (
+                  <div className={styles.detailCard}>
+                    <h3>Herramientas Mencionadas</h3>
+                    <ul>
+                      {analysis.tools_mentioned.map((item, index) => (
+                        <li key={index}>{TOOL_LABELS[item as keyof typeof TOOL_LABELS] || item}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </div>
+            </>
+          )}
+
+          {/* Insights de la Conversación */}
+          <h3 style={{ marginTop: '2rem' }}>Insights de la Conversación</h3>
           <div className={styles.detailsGrid}>
             {analysis.pain_points && analysis.pain_points.length > 0 && (
               <div className={styles.detailCard}>

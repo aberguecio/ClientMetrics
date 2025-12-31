@@ -68,6 +68,106 @@ function generateSampleData(field: string): ChartData[] {
         { label: '2025-05', value: 5 },
       ];
 
+    case 'pain_points':
+      return [
+        { label: 'costo', value: 25 },
+        { label: 'implementación', value: 20 },
+        { label: 'integración', value: 18 },
+        { label: 'tiempo', value: 15 },
+        { label: 'capacitación', value: 12 },
+        { label: 'migración', value: 10 },
+        { label: 'datos', value: 8 },
+        { label: 'personalización', value: 6 },
+      ];
+
+    case 'use_cases':
+      return [
+        { label: 'ventas', value: 28 },
+        { label: 'clientes', value: 22 },
+        { label: 'gestión', value: 18 },
+        { label: 'reportes', value: 16 },
+        { label: 'pipeline', value: 14 },
+        { label: 'leads', value: 12 },
+        { label: 'seguimiento', value: 10 },
+        { label: 'campañas', value: 8 },
+      ];
+
+    case 'objections':
+      return [
+        { label: 'precio', value: 20 },
+        { label: 'presupuesto', value: 18 },
+        { label: 'tiempo', value: 15 },
+        { label: 'evaluación', value: 12 },
+        { label: 'contrato', value: 10 },
+        { label: 'competidor', value: 9 },
+        { label: 'aprobación', value: 8 },
+        { label: 'seguridad', value: 7 },
+      ];
+
+    case 'others':
+      return [
+        { label: 'enterprise', value: 15 },
+        { label: 'demo', value: 12 },
+        { label: 'funciones', value: 10 },
+        { label: 'documentación', value: 9 },
+        { label: 'api', value: 8 },
+        { label: 'móvil', value: 6 },
+        { label: 'integración', value: 5 },
+      ];
+
+    // NEW: Closed array fields (frequency count)
+    case 'requirements.personalization':
+      return [
+        { label: 'Por tipo de cliente', value: 12 },
+        { label: 'Por idioma', value: 8 },
+        { label: 'Por producto/servicio', value: 6 },
+        { label: 'Por ubicación', value: 4 },
+      ];
+
+    case 'requirements.integrations':
+      return [
+        { label: 'CRM', value: 18 },
+        { label: 'WhatsApp', value: 15 },
+        { label: 'Calendario', value: 10 },
+        { label: 'E-commerce', value: 7 },
+        { label: 'Redes sociales', value: 5 },
+      ];
+
+    case 'demand_peaks':
+      return [
+        { label: 'Promociones', value: 14 },
+        { label: 'Temporada alta', value: 10 },
+        { label: 'Fines de semana', value: 8 },
+        { label: 'Eventos', value: 5 },
+      ];
+
+    case 'query_types':
+      return [
+        { label: 'Precios', value: 20 },
+        { label: 'Disponibilidad', value: 16 },
+        { label: 'Envíos', value: 12 },
+        { label: 'Soporte técnico', value: 9 },
+        { label: 'Devoluciones', value: 6 },
+      ];
+
+    case 'tools_mentioned':
+      return [
+        { label: 'WhatsApp', value: 18 },
+        { label: 'Email', value: 15 },
+        { label: 'Instagram', value: 10 },
+        { label: 'Zendesk', value: 7 },
+        { label: 'HubSpot', value: 4 },
+      ];
+
+    // NEW: Boolean fields (category)
+    case 'requirements.confidentiality':
+    case 'requirements.multilingual':
+    case 'requirements.real_time':
+      return [
+        { label: 'Sí', value: 12 },
+        { label: 'No', value: 8 },
+      ];
+
     default:
       // Fallback genérico
       return [
@@ -165,6 +265,14 @@ export default function ChartPreview({ chartType, xAxis, yAxis, groupBy, aggrega
     );
   }
 
+  if (chartType === 'wordcloud' && !xAxis) {
+    return (
+      <div style={{ padding: '2rem', textAlign: 'center', color: '#6b7280' }}>
+        Please select a text field for the word cloud
+      </div>
+    );
+  }
+
   if ((chartType === 'bar' || chartType === 'line' || chartType === 'area') && !xAxis) {
     return (
       <div style={{ padding: '2rem', textAlign: 'center', color: '#6b7280' }}>
@@ -174,7 +282,8 @@ export default function ChartPreview({ chartType, xAxis, yAxis, groupBy, aggrega
   }
 
   // Determine which field to use for generating sample data based on chart type
-  const dataField = chartType === 'pie' ? groupBy : xAxis;
+  const dataField = chartType === 'pie' ? groupBy :
+                   chartType === 'wordcloud' ? xAxis : xAxis;
 
   // If no dataField is selected yet, return early
   if (!dataField) {

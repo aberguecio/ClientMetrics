@@ -23,10 +23,10 @@ export async function POST(request: Request) {
     const body = await request.json();
 
     // Validate chart_type first
-    const validChartTypes = ['pie', 'bar', 'line', 'area'];
+    const validChartTypes = ['pie', 'bar', 'line', 'area', 'wordcloud'];
     if (!body.chart_type || !validChartTypes.includes(body.chart_type)) {
       return NextResponse.json(
-        { error: 'Invalid or missing chart_type. Must be one of: pie, bar, line, area' },
+        { error: 'Invalid or missing chart_type. Must be one of: pie, bar, line, area, wordcloud' },
         { status: 400 }
       );
     }
@@ -44,6 +44,13 @@ export async function POST(request: Request) {
       if (!body.group_by || !body.y_axis) {
         return NextResponse.json(
           { error: 'Pie charts require: group_by and y_axis' },
+          { status: 400 }
+        );
+      }
+    } else if (body.chart_type === 'wordcloud') {
+      if (!body.x_axis) {
+        return NextResponse.json(
+          { error: 'Wordcloud charts require: x_axis (text field to analyze)' },
           { status: 400 }
         );
       }
