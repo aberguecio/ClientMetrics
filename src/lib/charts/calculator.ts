@@ -41,7 +41,16 @@ export async function calculateChartData(
   // 5. Detect if primary field is a closed array field (using field metadata)
   if (isFieldClosedArray(primaryGroupField)) {
     console.log('📊 [CALCULATOR] Detected closed array field, using frequency calculation');
-    // Use frequency calculation for closed array fields
+
+    // Check if we need grouping for the closed array
+    if (chart.chart_type !== 'pie' && chart.group_by && chart.group_by.trim() !== '') {
+      return calculateClosedArrayFrequencyWithGrouping(meetings, {
+        ...chart,
+        x_axis: primaryGroupField,
+      });
+    }
+
+    // Use frequency calculation for closed array fields (no grouping)
     return calculateClosedArrayFrequency(meetings, {
       ...chart,
       x_axis: primaryGroupField, // Ensure x_axis is set to the field being analyzed
@@ -81,23 +90,17 @@ function calculateMultiSeriesData(
     let xValue: string;
     if (chart.x_axis === 'meetingDate' && chart.time_group) {
       xValue = formatDateByGroup(meeting.meetingDate, chart.time_group);
-    } else if (chart.x_axis in meeting) {
-      xValue = String((meeting as any)[chart.x_axis] ?? 'Unknown');
-    } else if (meeting.analysis && chart.x_axis in meeting.analysis) {
-      xValue = String(meeting.analysis[chart.x_axis] ?? 'Unknown');
     } else {
-      xValue = 'Unknown';
+      // Use getNestedValue to handle both top-level and nested fields
+      const val = getNestedValue(meeting.analysis, chart.x_axis) ?? (meeting as any)[chart.x_axis];
+      xValue = String(val ?? 'Unknown');
     }
 
     // Get group_by value
     let groupValue: string;
-    if (chart.group_by in meeting) {
-      groupValue = String((meeting as any)[chart.group_by] ?? 'Unknown');
-    } else if (meeting.analysis && chart.group_by in meeting.analysis) {
-      groupValue = String(meeting.analysis[chart.group_by] ?? 'Unknown');
-    } else {
-      groupValue = 'Unknown';
-    }
+    // Use getNestedValue to handle both top-level and nested fields
+    const val = getNestedValue(meeting.analysis, chart.group_by) ?? (meeting as any)[chart.group_by];
+    groupValue = String(val ?? 'Unknown');
 
     // Add to nested map
     if (!nestedMap.has(xValue)) {
@@ -428,12 +431,32 @@ export function calculateClosedArrayFrequency(
     if (!meeting.analysis) continue;
 
     // Get the array value using field metadata path
-    const arrayValue = getNestedValue(meeting.analysis, fieldKey);
+    let arrayValue = getNestedValue(meeting.analysis, fieldKey);
+
+    // DEBUG LOG
+    if (meetings.length < 5 || Math.random() < 0.1) {
+      console.log(`[Calculator] Field: ${fieldKey}, Value:`, JSON.stringify(arrayValue));
+    }
+
+    // Handle potential double-encoded JSON strings
+    if (typeof arrayValue === 'string') {
+      try {
+        if (arrayValue.startsWith('[') && arrayValue.endsWith(']')) {
+          arrayValue = JSON.parse(arrayValue);
+        }
+      } catch (e) {
+        console.warn(`[Calculator] Failed to parse string array value for ${fieldKey}:`, arrayValue);
+      }
+    }
 
     if (Array.isArray(arrayValue)) {
       for (const item of arrayValue) {
-        if (item && typeof item === 'string') {
-          frequencyMap.set(item, (frequencyMap.get(item) || 0) + 1);
+        // Handle both string items and convert non-string items to string
+        if (item !== null && item !== undefined) {
+          const key = String(item).trim();
+          if (key !== '') {
+            frequencyMap.set(key, (frequencyMap.get(key) || 0) + 1);
+          }
         }
       }
     }
@@ -447,6 +470,103 @@ export function calculateClosedArrayFrequency(
       raw_key: key, // Keep original for filtering
     }))
     .sort((a, b) => b.value - a.value); // Sort by frequency descending
+
+  return chartData;
+}
+
+/**
+ * Calculates frequency data for closed enum arrays with grouping
+ * 
+ * @param meetings - Array of meetings
+ * @param chart - Chart configuration
+ * @returns ChartData[] with multiple series
+ */
+function calculateClosedArrayFrequencyWithGrouping(
+  meetings: Array<SalesMeeting & { analysis?: any }>,
+  chart: SavedChart
+): ChartData[] {
+  // Map: xValue (Array Item) -> groupValue -> count
+  const nestedMap = new Map<string, Map<string, number>>();
+  const fieldKey = chart.x_axis;
+  const groupKey = chart.group_by!;
+
+  // Get field metadata for label mapping
+  const fieldMetadata = getFieldMetadata(fieldKey);
+  const labelMap = fieldMetadata?.labelMap || {};
+
+  for (const meeting of meetings) {
+    if (!meeting.analysis) continue;
+
+    // Get the array value (x-axis)
+    let arrayValue = getNestedValue(meeting.analysis, fieldKey);
+
+    // Handle potential double-encoded JSON strings
+    if (typeof arrayValue === 'string') {
+      try {
+        if (arrayValue.startsWith('[') && arrayValue.endsWith(']')) {
+          arrayValue = JSON.parse(arrayValue);
+        }
+      } catch (e) {
+        // Ignore parse error
+      }
+    }
+
+    if (!Array.isArray(arrayValue)) continue;
+
+    // Get the group value
+    let groupValue: string;
+    const val = getNestedValue(meeting.analysis, groupKey) ?? (meeting as any)[groupKey];
+
+    if (typeof val === 'boolean') {
+      groupValue = val ? 'Sí' : 'No';
+    } else {
+      groupValue = String(val ?? 'Unknown');
+    }
+
+    // Iterate through array items and count for the specific group
+    for (const item of arrayValue) {
+      if (item !== null && item !== undefined) {
+        const key = String(item).trim();
+        if (key !== '') {
+          if (!nestedMap.has(key)) {
+            nestedMap.set(key, new Map());
+          }
+          const groupMap = nestedMap.get(key)!;
+          groupMap.set(groupValue, (groupMap.get(groupValue) || 0) + 1);
+        }
+      }
+    }
+  }
+
+  // Get all unique series (group values)
+  const allSeries = new Set<string>();
+  for (const groupMap of nestedMap.values()) {
+    for (const seriesName of groupMap.keys()) {
+      allSeries.add(seriesName);
+    }
+  }
+
+  // Format data for Recharts
+  const chartData: ChartData[] = [];
+
+  for (const [xValue, groupMap] of nestedMap.entries()) {
+    const dataPoint: ChartData = {
+      label: labelMap[xValue] || xValue,
+      value: 0, // Total count
+      raw_key: xValue,
+    };
+
+    for (const seriesName of allSeries) {
+      const count = groupMap.get(seriesName) || 0;
+      dataPoint[seriesName] = count;
+      dataPoint.value += count;
+    }
+
+    chartData.push(dataPoint);
+  }
+
+  // Sort by total value descending
+  chartData.sort((a, b) => b.value - a.value);
 
   return chartData;
 }

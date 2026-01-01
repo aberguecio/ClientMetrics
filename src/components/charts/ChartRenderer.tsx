@@ -54,7 +54,7 @@ export default function ChartRenderer({ chart, data }: ChartRendererProps) {
   if (data.length > 0 && 'label' in data[0]) {
     const samplePoint = data[0] as ChartData;
     for (const key in samplePoint) {
-      if (key !== 'label' && key !== 'value') {
+      if (key !== 'label' && key !== 'value' && key !== 'raw_key') {
         seriesKeys.push(key);
       }
     }
