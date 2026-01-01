@@ -1,91 +1,67 @@
 'use client';
 
+import { getFieldsByCategories, FieldCategory, type FieldMetadata } from '@/lib/charts/field-metadata';
+
 interface VariableSelectorProps {
   label: string;
   value: string;
   onChange: (value: string) => void;
   disabled?: boolean;
-  types?: Array<'category' | 'metric' | 'text_analysis' | 'closed_array'>; // NEW: Array of types
+  allowedCategories: FieldCategory[];  // Use FieldCategory enum instead of strings
+  required?: boolean;
 }
 
-// Categorical fields (for X-Axis, Category, Group By)
-const CATEGORICAL_FIELDS = {
-  'Campos Base': [
-    { value: 'salesRep', label: 'Representante de Ventas' },
-    { value: 'closed', label: 'Estado (Cerrada/Abierta)' },
-    { value: 'meetingDate', label: 'Fecha de Reunión' },
-  ],
-  'Análisis LLM': [
-    { value: 'sector', label: 'Sector' },
-    { value: 'company_size', label: 'Tamaño de Empresa' },
-    { value: 'discovery_channel', label: 'Canal de Descubrimiento' },
-    // NEW: Boolean fields
-    { value: 'requirements.confidentiality', label: 'Requiere Confidencialidad' },
-    { value: 'requirements.multilingual', label: 'Requiere Multiidioma' },
-    { value: 'requirements.real_time', label: 'Requiere Tiempo Real' },
-  ],
-};
-
-// Quantifiable fields (for Y-Axis, Metrics)
-const QUANTIFIABLE_FIELDS = {
-  'Métricas': [
-    { value: 'count', label: 'Cantidad de Reuniones' },
-    { value: 'interaction_volume_daily', label: 'Volumen de Interacción Diaria (promedio)' },
-  ],
-};
-
-// Text analysis fields (for Wordcloud)
-const TEXT_ANALYSIS_FIELDS = {
-  'Análisis de Texto': [
-    { value: 'pain_points', label: 'Pain Points (Puntos de Dolor)' },
-    { value: 'use_cases', label: 'Use Cases (Casos de Uso)' },
-    { value: 'objections', label: 'Objections (Objeciones)' },
-    { value: 'others', label: 'Others (Insights Adicionales)' },
-  ],
-};
-
-// NEW: Closed array fields (for frequency visualization)
-const CLOSED_ARRAY_FIELDS = {
-  'Requerimientos Técnicos': [
-    { value: 'requirements.personalization', label: 'Tipos de Personalización' },
-    { value: 'requirements.integrations', label: 'Integraciones Requeridas' },
-  ],
-  'Patrones de Negocio': [
-    { value: 'demand_peaks', label: 'Picos de Demanda' },
-    { value: 'query_types', label: 'Tipos de Consultas' },
-  ],
-  'Herramientas': [
-    { value: 'tools_mentioned', label: 'Herramientas Mencionadas' },
-  ],
-};
-
-export default function VariableSelector({ label, value, onChange, disabled, types = ['category'] }: VariableSelectorProps) {
-  // Merge field groups based on types array
-  let mergedGroups: Record<string, Array<{ value: string; label: string }>> = {};
-
-  for (const type of types) {
-    const groups =
-      type === 'metric' ? QUANTIFIABLE_FIELDS :
-      type === 'text_analysis' ? TEXT_ANALYSIS_FIELDS :
-      type === 'closed_array' ? CLOSED_ARRAY_FIELDS :
-      CATEGORICAL_FIELDS;
-
-    // Merge groups
-    for (const [groupName, fields] of Object.entries(groups)) {
-      if (!mergedGroups[groupName]) {
-        mergedGroups[groupName] = [];
-      }
-      mergedGroups[groupName].push(...fields);
-    }
+/**
+ * Get visual indicator for field type
+ */
+function getFieldTypeIndicator(field: FieldMetadata): string {
+  switch (field.category) {
+    case FieldCategory.CLOSED_ARRAY:
+      return ' 📊 [Frecuencia]';
+    case FieldCategory.BOOLEAN:
+      return ' ✓ [Sí/No]';
+    case FieldCategory.TEMPORAL:
+      return ' 📅 [Tiempo]';
+    case FieldCategory.NUMERIC:
+      return ' 🔢 [Numérico]';
+    case FieldCategory.OPEN_ARRAY:
+      return ' 💬 [Texto]';
+    case FieldCategory.FREE_TEXT:
+      return ' 📝 [Texto Libre]';
+    default:
+      return '';
   }
+}
 
-  const fieldGroups = mergedGroups;
+export default function VariableSelector({
+  label,
+  value,
+  onChange,
+  disabled,
+  allowedCategories,
+  required = false,
+}: VariableSelectorProps) {
+  // Get fields dynamically from registry based on allowed categories
+  const fields = getFieldsByCategories(allowedCategories);
+
+  // Group by source (Base vs LLM Analysis)
+  const groupedFields: Record<string, FieldMetadata[]> = {};
+
+  for (const field of fields) {
+    const groupName = field.isNested ? 'Análisis LLM' : 'Campos Base';
+    if (!groupedFields[groupName]) {
+      groupedFields[groupName] = [];
+    }
+    groupedFields[groupName].push(field);
+  }
 
   return (
     <div>
-      <label htmlFor={label} style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600 }}>
-        {label}
-      </label>
+      {label && (
+        <label htmlFor={label} style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600 }}>
+          {label} {required && <span style={{ color: '#ef4444' }}>*</span>}
+        </label>
+      )}
       <select
         id={label}
         value={value}
@@ -100,11 +76,11 @@ export default function VariableSelector({ label, value, onChange, disabled, typ
         }}
       >
         <option value="">Selecciona una variable</option>
-        {Object.entries(fieldGroups).map(([groupName, variables]) => (
+        {Object.entries(groupedFields).map(([groupName, fields]) => (
           <optgroup key={groupName} label={groupName}>
-            {variables.map((variable) => (
-              <option key={variable.value} value={variable.value}>
-                {variable.label}
+            {fields.map((field) => (
+              <option key={field.key} value={field.key}>
+                {field.label}{getFieldTypeIndicator(field)}
               </option>
             ))}
           </optgroup>

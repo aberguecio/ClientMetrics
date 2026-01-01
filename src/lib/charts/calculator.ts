@@ -2,6 +2,7 @@ import { getMeetingsWithFilters } from '@/lib/filters/builder';
 import { mergeFilters } from '@/lib/filters/merger';
 import type { SavedChart, SavedFilter, ChartData, WordCloudData, AggregationType, TimeGrouping } from '@/types/charts';
 import type { SalesMeeting } from '@/lib/db/schema';
+import { getFieldMetadata, isFieldClosedArray, isFieldAggregable } from './field-metadata';
 
 /**
  * Calculates chart data based on chart configuration and filters
@@ -37,16 +38,9 @@ export async function calculateChartData(
   // For bar/line/area: use x_axis for primary grouping, group_by for series
   const primaryGroupField = chart.chart_type === 'pie' ? chart.group_by : chart.x_axis;
 
-  // 5. NEW: Detect if primary field is a closed array field
-  const closedArrayFields = [
-    'requirements.personalization',
-    'requirements.integrations',
-    'demand_peaks',
-    'query_types',
-    'tools_mentioned',
-  ];
-
-  if (closedArrayFields.includes(primaryGroupField)) {
+  // 5. Detect if primary field is a closed array field (using field metadata)
+  if (isFieldClosedArray(primaryGroupField)) {
+    console.log('📊 [CALCULATOR] Detected closed array field, using frequency calculation');
     // Use frequency calculation for closed array fields
     return calculateClosedArrayFrequency(meetings, {
       ...chart,
@@ -160,6 +154,16 @@ function applyAggregationToMeetings(
 ): number {
   // If field is 'count', always return count regardless of aggregation type
   if (field === 'count') {
+    return meetings.length;
+  }
+
+  // Validate field is aggregable for numeric aggregations
+  const numericAggregations: AggregationType[] = ['sum', 'avg', 'min', 'max'];
+  if (numericAggregations.includes(type) && !isFieldAggregable(field)) {
+    console.warn(
+      `[Calculator] Field "${field}" is not aggregable (not numeric). ` +
+      `Falling back to count. Aggregation "${type}" requires a numeric field.`
+    );
     return meetings.length;
   }
 
@@ -383,11 +387,17 @@ export function formatForChart(
 }
 
 /**
- * Get a nested field value from an object using dot notation
- * Example: getNestedValue({a: {b: 'c'}}, 'a.b') => 'c'
+ * Get a nested field value from an object using field metadata
+ * Uses the path defined in field metadata registry
  */
-function getNestedValue(obj: any, path: string): any {
-  return path.split('.').reduce((current, key) => current?.[key], obj);
+function getNestedValue(obj: any, fieldKey: string): any {
+  const metadata = getFieldMetadata(fieldKey);
+  if (!metadata) {
+    console.warn(`[Calculator] Unknown field: ${fieldKey}`);
+    return undefined;
+  }
+
+  return metadata.path.reduce((current, key) => current?.[key], obj);
 }
 
 /**
@@ -403,30 +413,22 @@ export function calculateClosedArrayFrequency(
   chart: SavedChart
 ): ChartData[] {
   const frequencyMap = new Map<string, number>();
-  const fieldPath = chart.x_axis; // e.g., 'requirements.integrations', 'demand_peaks'
+  const fieldKey = chart.x_axis; // e.g., 'requirements.integrations', 'demand_peaks'
 
-  // Import label mappings
-  const {
-    INTEGRATION_LABELS,
-    PERSONALIZATION_LABELS,
-    DEMAND_PEAK_LABELS,
-    QUERY_TYPE_LABELS,
-    TOOL_LABELS,
-  } = require('@/lib/constants/llm-enums');
+  // Get field metadata for label mapping
+  const fieldMetadata = getFieldMetadata(fieldKey);
+  const labelMap = fieldMetadata?.labelMap || {};
 
-  // Determine which label mapping to use based on field path
-  let labelMap: Record<string, string> = {};
-  if (fieldPath.includes('integrations')) labelMap = INTEGRATION_LABELS;
-  else if (fieldPath.includes('personalization')) labelMap = PERSONALIZATION_LABELS;
-  else if (fieldPath === 'demand_peaks') labelMap = DEMAND_PEAK_LABELS;
-  else if (fieldPath === 'query_types') labelMap = QUERY_TYPE_LABELS;
-  else if (fieldPath === 'tools_mentioned') labelMap = TOOL_LABELS;
+  if (!fieldMetadata) {
+    console.warn(`[Calculator] Unknown field for frequency calculation: ${fieldKey}`);
+    return [];
+  }
 
   for (const meeting of meetings) {
     if (!meeting.analysis) continue;
 
-    // Get the array value using nested path (e.g., analysis.requirements.integrations)
-    const arrayValue = getNestedValue(meeting.analysis, fieldPath);
+    // Get the array value using field metadata path
+    const arrayValue = getNestedValue(meeting.analysis, fieldKey);
 
     if (Array.isArray(arrayValue)) {
       for (const item of arrayValue) {
@@ -437,10 +439,10 @@ export function calculateClosedArrayFrequency(
     }
   }
 
-  // Convert to ChartData format with human-readable labels
+  // Convert to ChartData format with human-readable labels from field metadata
   const chartData: ChartData[] = Array.from(frequencyMap.entries())
     .map(([key, value]) => ({
-      label: labelMap[key] || key, // Use label mapping or fallback to key
+      label: labelMap[key] || key, // Use label mapping from metadata or fallback to key
       value,
       raw_key: key, // Keep original for filtering
     }))

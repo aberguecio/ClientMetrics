@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getAllCharts, createChart, addChartToView, getViewWithDetails } from '@/lib/charts/queries';
 import { mapChartToApi } from '@/lib/charts/mappers';
+import { validateChartConfig, getValidationErrorMessages } from '@/lib/charts/validation';
 
 // GET /api/charts - List all charts
 export async function GET() {
@@ -22,55 +23,31 @@ export async function POST(request: Request) {
   try {
     const body = await request.json();
 
-    // Validate chart_type first
-    const validChartTypes = ['pie', 'bar', 'line', 'area', 'wordcloud'];
-    if (!body.chart_type || !validChartTypes.includes(body.chart_type)) {
+    // Use centralized validation
+    const validationResult = validateChartConfig({
+      name: body.name || '',
+      chart_type: body.chart_type,
+      x_axis: body.x_axis || '',
+      y_axis: body.y_axis || 'count',
+      group_by: body.group_by || '',
+      aggregation: body.aggregation || 'count',
+    });
+
+    if (!validationResult.valid) {
+      const errorMessages = getValidationErrorMessages(validationResult);
       return NextResponse.json(
-        { error: 'Invalid or missing chart_type. Must be one of: pie, bar, line, area, wordcloud' },
+        {
+          error: 'Invalid chart configuration',
+          details: validationResult.errors,
+          messages: errorMessages,
+        },
         { status: 400 }
       );
     }
 
-    // Validate required fields based on chart type
-    if (!body.name) {
-      return NextResponse.json(
-        { error: 'Missing required field: name' },
-        { status: 400 }
-      );
-    }
-
-    // Chart-type specific validation
-    if (body.chart_type === 'pie') {
-      if (!body.group_by || !body.y_axis) {
-        return NextResponse.json(
-          { error: 'Pie charts require: group_by and y_axis' },
-          { status: 400 }
-        );
-      }
-    } else if (body.chart_type === 'wordcloud') {
-      if (!body.x_axis) {
-        return NextResponse.json(
-          { error: 'Wordcloud charts require: x_axis (text field to analyze)' },
-          { status: 400 }
-        );
-      }
-    } else {
-      // bar, line, area
-      if (!body.x_axis || !body.y_axis) {
-        return NextResponse.json(
-          { error: `${body.chart_type} charts require: x_axis and y_axis` },
-          { status: 400 }
-        );
-      }
-    }
-
-    // Validate aggregation
-    const validAggregations = ['count', 'sum', 'avg', 'min', 'max'];
-    if (body.aggregation && !validAggregations.includes(body.aggregation)) {
-      return NextResponse.json(
-        { error: 'Invalid aggregation. Must be one of: count, sum, avg, min, max' },
-        { status: 400 }
-      );
+    // Log warnings if any (non-blocking)
+    if (validationResult.warnings.length > 0) {
+      console.warn('[Chart API] Validation warnings:', validationResult.warnings);
     }
 
     const newChart = await createChart({

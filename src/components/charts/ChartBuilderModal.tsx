@@ -5,6 +5,9 @@ import VariableSelector from './VariableSelector';
 import ChartPreview from './ChartPreview';
 import type { ChartType, AggregationType, SavedChart, SavedFilter } from '@/types/charts';
 import styles from './ChartBuilderModal.module.css';
+import { validateChartConfig, type ValidationResult } from '@/lib/charts/validation';
+import { getChartConfig, AxisRole, getAllowedAggregations } from '@/lib/charts/chart-config';
+import { FieldCategory } from '@/lib/charts/field-metadata';
 
 interface ChartBuilderModalProps {
   isOpen: boolean;
@@ -16,111 +19,13 @@ interface ChartBuilderModalProps {
   autoAddToView?: boolean;
 }
 
-// Field configuration interface
-interface FieldConfig {
-  name: 'category' | 'metric' | 'aggregation' | 'groupBy';
+// Field configuration derived from chart-config
+interface FieldUIConfig {
+  role: AxisRole;
   label: string;
   helpText: string;
-  showVariableSelector: boolean; // For category and metric fields
-}
-
-// Get field configuration based on chart type
-function getFieldsForChartType(type: ChartType): FieldConfig[] {
-  switch (type) {
-    case 'pie':
-      return [
-        {
-          name: 'category',
-          label: 'Categoría *',
-          helpText: 'El campo que dividirá el pastel en sectores (ej: sector, tools_mentioned)',
-          showVariableSelector: true,
-        },
-        {
-          name: 'metric',
-          label: 'Métrica *',
-          helpText: 'El valor numérico que determina el tamaño de cada sector',
-          showVariableSelector: true,
-        },
-        {
-          name: 'aggregation',
-          label: 'Agregación *',
-          helpText: 'Cómo calcular el valor (contar reuniones, sumar, promediar)',
-          showVariableSelector: false,
-        },
-      ];
-    case 'wordcloud':
-      return [
-        {
-          name: 'category',
-          label: 'Campo de Texto *',
-          helpText: 'Selecciona el campo de texto a analizar (pain points, use cases, etc.)',
-          showVariableSelector: true,
-        },
-        {
-          name: 'groupBy',
-          label: 'Filtrar Por (opcional)',
-          helpText: 'Opcional: filtrar por categoría antes de analizar',
-          showVariableSelector: true,
-        },
-      ];
-    case 'bar':
-      return [
-        {
-          name: 'category',
-          label: 'Categorías (Eje X) *',
-          helpText: 'Las categorías que aparecerán como barras (ej: sector, demand_peaks)',
-          showVariableSelector: true,
-        },
-        {
-          name: 'metric',
-          label: 'Métrica (Eje Y) *',
-          helpText: 'El valor que determina la altura de cada barra',
-          showVariableSelector: true,
-        },
-        {
-          name: 'aggregation',
-          label: 'Agregación *',
-          helpText: 'Cómo calcular la altura (contar, sumar, promediar)',
-          showVariableSelector: false,
-        },
-        {
-          name: 'groupBy',
-          label: 'Agrupar Por (opcional)',
-          helpText: 'Crea múltiples barras por categoría (ej: cerradas vs abiertas)',
-          showVariableSelector: true,
-        },
-      ];
-    case 'line':
-    case 'area':
-      return [
-        {
-          name: 'category',
-          label: 'Eje X (Tiempo/Categoría) *',
-          helpText: 'El eje horizontal, típicamente fechas o categorías ordenadas',
-          showVariableSelector: true,
-        },
-        {
-          name: 'metric',
-          label: 'Métrica (Eje Y) *',
-          helpText: 'El valor numérico del eje vertical',
-          showVariableSelector: true,
-        },
-        {
-          name: 'aggregation',
-          label: 'Agregación *',
-          helpText: 'Cómo calcular el valor en cada punto',
-          showVariableSelector: false,
-        },
-        {
-          name: 'groupBy',
-          label: 'Agrupar Por (opcional)',
-          helpText: 'Crea múltiples líneas en el gráfico (ej: una por vendedor)',
-          showVariableSelector: true,
-        },
-      ];
-    default:
-      return [];
-  }
+  required: boolean;
+  allowedCategories: FieldCategory[];
 }
 
 export default function ChartBuilderModal({
@@ -143,6 +48,7 @@ export default function ChartBuilderModal({
   const [chartFilterId, setChartFilterId] = useState(editChart?.chart_filter_id || '');
   const [filters, setFilters] = useState<SavedFilter[]>([]);
   const [saving, setSaving] = useState(false);
+  const [validationResult, setValidationResult] = useState<ValidationResult | null>(null);
 
   // Reset form when editChart changes or modal opens
   useEffect(() => {
@@ -167,44 +73,40 @@ export default function ChartBuilderModal({
     }
   }, [isOpen, editChart]);
 
+  // Real-time validation (run on steps 2 and 3)
+  useEffect(() => {
+    if (step === 2 || step === 3) {
+      const result = validateChartConfig({
+        name: step === 2 ? 'temp' : name, // Skip name validation on step 2
+        chart_type: chartType,
+        x_axis: xAxis,
+        y_axis: yAxis,
+        group_by: groupBy,
+        aggregation,
+      });
+      setValidationResult(result);
+    }
+  }, [name, chartType, xAxis, yAxis, groupBy, aggregation, step]);
+
   if (!isOpen) return null;
 
   async function handleSave() {
-    // Validate based on chart type
-    let isValid = true;
-    let errorMessage = '';
+    // Use centralized validation
+    const result = validateChartConfig({
+      name,
+      chart_type: chartType,
+      x_axis: xAxis,
+      y_axis: yAxis,
+      group_by: groupBy,
+      aggregation,
+    });
 
-    if (!name || !chartType) {
-      isValid = false;
-      errorMessage = 'Por favor ingresa un nombre y selecciona un tipo de gráfico';
-    } else {
-      // Specific validation per chart type
-      switch (chartType) {
-        case 'pie':
-          if (!groupBy || !yAxis) {
-            isValid = false;
-            errorMessage = 'Por favor completa categoría y métrica para gráfico de pastel';
-          }
-          break;
-        case 'wordcloud':
-          if (!xAxis) {
-            isValid = false;
-            errorMessage = 'Por favor selecciona un campo de texto para el word cloud';
-          }
-          break;
-        case 'bar':
-        case 'line':
-        case 'area':
-          if (!xAxis || !yAxis) {
-            isValid = false;
-            errorMessage = 'Por favor completa los ejes X e Y';
-          }
-          break;
-      }
-    }
-
-    if (!isValid) {
-      alert(errorMessage);
+    if (!result.valid) {
+      const messages = [
+        ...result.errors.map(e => `❌ ${e.message}`),
+        ...result.warnings.map(w => `⚠️ ${w.message}`),
+      ];
+      alert('Validación falló:\n\n' + messages.join('\n'));
       return;
     }
 
@@ -323,85 +225,112 @@ export default function ChartBuilderModal({
         );
 
       case 2:
-        const fields = getFieldsForChartType(chartType);
+        const chartConfig = getChartConfig(chartType);
         return (
           <div>
             <h3 className={styles.stepTitle}>Step 2 of 3: Configure Variables</h3>
             <div className={styles.formGrid}>
-              {fields.map((field) => (
-                <div key={field.name}>
-                  {field.showVariableSelector ? (
-                    <>
-                      <label style={{ display: 'block', marginBottom: '0.25rem', fontWeight: 600 }}>
-                        {field.label}
-                      </label>
-                      <p style={{ fontSize: '0.75rem', color: '#6b7280', marginBottom: '0.5rem' }}>
-                        {field.helpText}
-                      </p>
-                      <VariableSelector
-                        label=""
-                        value={
-                          field.name === 'category'
-                            ? (chartType === 'pie' ? groupBy : xAxis)
-                            : field.name === 'groupBy'
-                            ? groupBy
-                            : yAxis
-                        }
-                        onChange={(value) => {
-                          if (field.name === 'category') {
-                            if (chartType === 'pie') {
-                              setGroupBy(value);
-                            } else {
-                              setXAxis(value);
-                            }
-                          } else if (field.name === 'groupBy') {
-                            setGroupBy(value);
-                          } else {
-                            setYAxis(value);
-                          }
-                        }}
-                        types={
-                          field.name === 'metric'
-                            ? ['metric']
-                            : chartType === 'wordcloud' && field.name === 'category'
-                            ? ['text_analysis']
-                            : field.name === 'category' && ['bar', 'line', 'area', 'pie'].includes(chartType)
-                            ? ['category', 'closed_array'] // Allow both for X-axis/Category
-                            : field.name === 'groupBy'
-                            ? ['category'] // Group by only accepts regular categories
-                            : ['category']
-                        }
-                      />
-                    </>
-                  ) : (
-                    <>
-                      <label htmlFor="aggregation" style={{ display: 'block', marginBottom: '0.25rem', fontWeight: 600 }}>
-                        {field.label}
-                      </label>
-                      <p style={{ fontSize: '0.75rem', color: '#6b7280', marginBottom: '0.5rem' }}>
-                        {field.helpText}
-                      </p>
-                      <select
-                        id="aggregation"
-                        value={aggregation}
-                        onChange={(e) => setAggregation(e.target.value as AggregationType)}
-                        style={{
-                          width: '100%',
-                          padding: '0.5rem',
-                          border: '1px solid #d1d5db',
-                          borderRadius: '0.375rem',
-                        }}
-                      >
-                        <option value="count">Count</option>
-                        <option value="sum">Sum</option>
-                        <option value="avg">Average</option>
-                        <option value="min">Minimum</option>
-                        <option value="max">Maximum</option>
-                      </select>
-                    </>
-                  )}
+              {chartConfig.axisRequirements.map((requirement) => (
+                <div key={requirement.role}>
+                  <VariableSelector
+                    label={requirement.description + (requirement.required ? ' *' : '')}
+                    value={
+                      requirement.role === AxisRole.X_AXIS || requirement.role === AxisRole.TEXT_FIELD
+                        ? xAxis
+                        : requirement.role === AxisRole.Y_AXIS
+                        ? yAxis
+                        : groupBy
+                    }
+                    onChange={(value) => {
+                      if (requirement.role === AxisRole.X_AXIS || requirement.role === AxisRole.TEXT_FIELD) {
+                        setXAxis(value);
+                      } else if (requirement.role === AxisRole.Y_AXIS) {
+                        setYAxis(value);
+                      } else {
+                        setGroupBy(value);
+                      }
+                    }}
+                    allowedCategories={requirement.allowedCategories}
+                    required={requirement.required}
+                  />
+                  <p style={{ fontSize: '0.75rem', color: '#6b7280', marginTop: '0.25rem' }}>
+                    {requirement.helpText}
+                  </p>
                 </div>
               ))}
+
+              {/* Aggregation selector */}
+              <div>
+                <label htmlFor="aggregation" style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600 }}>
+                  Agregación *
+                </label>
+                <select
+                  id="aggregation"
+                  value={aggregation}
+                  onChange={(e) => setAggregation(e.target.value as AggregationType)}
+                  style={{
+                    width: '100%',
+                    padding: '0.5rem',
+                    border: '1px solid #d1d5db',
+                    borderRadius: '0.375rem',
+                  }}
+                >
+                  {getAllowedAggregations(chartType).map(agg => (
+                    <option key={agg} value={agg}>
+                      {agg.charAt(0).toUpperCase() + agg.slice(1)}
+                    </option>
+                  ))}
+                </select>
+                <p style={{ fontSize: '0.75rem', color: '#6b7280', marginTop: '0.25rem' }}>
+                  Cómo calcular el valor (contar, sumar, promediar, etc.)
+                </p>
+              </div>
+
+              {/* Validation errors and warnings */}
+              {validationResult && validationResult.errors.length > 0 && (
+                <div style={{
+                  padding: '0.75rem',
+                  backgroundColor: '#fee2e2',
+                  border: '1px solid #ef4444',
+                  borderRadius: '0.375rem',
+                  gridColumn: '1 / -1',
+                }}>
+                  <p style={{ fontWeight: 600, color: '#dc2626', marginBottom: '0.5rem' }}>
+                    ❌ Errores de validación:
+                  </p>
+                  <ul style={{ margin: 0, paddingLeft: '1.5rem', color: '#dc2626' }}>
+                    {validationResult.errors.map((error, idx) => (
+                      <li key={idx}>
+                        {error.message}
+                        {error.suggestion && (
+                          <span style={{ fontSize: '0.875em', fontStyle: 'italic' }}>
+                            {' '}({error.suggestion})
+                          </span>
+                        )}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {validationResult && validationResult.warnings.length > 0 && (
+                <div style={{
+                  padding: '0.75rem',
+                  backgroundColor: '#fef3c7',
+                  border: '1px solid #f59e0b',
+                  borderRadius: '0.375rem',
+                  gridColumn: '1 / -1',
+                }}>
+                  <p style={{ fontWeight: 600, color: '#d97706', marginBottom: '0.5rem' }}>
+                    ⚠️ Advertencias:
+                  </p>
+                  <ul style={{ margin: 0, paddingLeft: '1.5rem', color: '#d97706' }}>
+                    {validationResult.warnings.map((warning, idx) => (
+                      <li key={idx}>{warning.message}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
             </div>
           </div>
         );
@@ -528,7 +457,15 @@ export default function ChartBuilderModal({
               </button>
             )}
             {step < 3 && (
-              <button onClick={() => setStep(step + 1)} className={styles.primaryButton}>
+              <button
+                onClick={() => setStep(step + 1)}
+                className={styles.primaryButton}
+                disabled={step === 2 && validationResult?.valid === false}
+                style={{
+                  opacity: step === 2 && validationResult?.valid === false ? 0.5 : 1,
+                  cursor: step === 2 && validationResult?.valid === false ? 'not-allowed' : 'pointer',
+                }}
+              >
                 Next
               </button>
             )}
