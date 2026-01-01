@@ -1,4 +1,4 @@
-export type ChartType = 'pie' | 'bar' | 'line' | 'area' | 'wordcloud';
+export type ChartType = 'pie' | 'bar' | 'line' | 'area' | 'wordcloud' | 'vector_cluster';
 
 export type AggregationType = 'count' | 'sum' | 'avg' | 'min' | 'max';
 
@@ -16,6 +16,9 @@ export interface SavedChart {
   time_group?: TimeGrouping;
   colors?: string;  // Comma-separated colors
   chart_filter_id?: string;  // Optional filter for this chart
+  // New fields for vector clustering
+  k_clusters?: number;
+  label_field?: string;
   created_at: string;
   updated_at: string;
 }

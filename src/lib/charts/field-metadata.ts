@@ -97,6 +97,35 @@ export const FIELD_REGISTRY: Record<string, FieldMetadata> = {
     category: FieldCategory.NUMERIC,
     path: ['count'],
     isNested: false,
+    temporal: false,
+  },
+
+  clientName: {
+    key: 'clientName',
+    label: 'Nombre del Cliente',
+    category: FieldCategory.CATEGORICAL,
+    path: ['clientName'],
+    isNested: false,
+    aggregable: false,
+    temporal: false,
+  },
+
+  embedding: {
+    key: 'embedding',
+    label: 'Embedding (Vector)',
+    category: FieldCategory.FREE_TEXT, // Stored as text, used for vector analysis
+    path: ['embedding'],
+    isNested: false,
+    aggregable: false,
+    temporal: false,
+  },
+
+  count: {
+    key: 'count',
+    label: 'Cantidad de Reuniones',
+    category: FieldCategory.NUMERIC,
+    path: ['count'],
+    isNested: false,
     aggregable: true,
     temporal: false,
   },

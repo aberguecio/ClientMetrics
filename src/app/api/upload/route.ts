@@ -104,7 +104,9 @@ export async function POST(request: NextRequest) {
     console.log(`Created ${meetingIds.length} processing jobs for upload ${result.upload.id}`);
 
     // Note: Jobs will be processed automatically by the auto-processor running in the background
-    // No need to trigger processing manually - the auto-processor checks for pending jobs every 10 seconds
+    // But we trigger it immediately for better UX
+    const { triggerJobProcessing } = await import('@/lib/jobs/auto-processor');
+    triggerJobProcessing();
 
     return NextResponse.json({
       success: true,

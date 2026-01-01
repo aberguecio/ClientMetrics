@@ -42,33 +42,10 @@ export async function createJobs(meetingIds: string[]) {
 }
 
 /**
- * Process the next pending job
+ * Internal function to process a specific job
+ * Assumes job is already marked as 'processing'
  */
-export async function processNextJob(): Promise<{
-  success: boolean;
-  jobId?: string;
-  error?: string;
-} | null> {
-  // 1. Get a pending job (simple approach without distributed locking)
-  const [job] = await db
-    .select()
-    .from(processingJobs)
-    .where(eq(processingJobs.status, 'pending'))
-    .limit(1);
-
-  if (!job) {
-    return null; // No jobs to process
-  }
-
-  // 2. Mark as processing
-  await db
-    .update(processingJobs)
-    .set({
-      status: 'processing',
-      updatedAt: new Date(),
-    })
-    .where(eq(processingJobs.id, job.id));
-
+async function processJobInternal(job: { id: string; meetingId: string; attempts: number }): Promise<{ success: boolean; jobId?: string; error?: string }> {
   try {
     // 3. Get meeting data
     const [meeting] = await db
@@ -117,6 +94,15 @@ export async function processNextJob(): Promise<{
         model: MODELS.LLM,
         analysisJson: analysis,
         embedding: embeddingVector,
+      })
+      .onConflictDoUpdate({
+        target: [llmAnalysis.meetingId, llmAnalysis.promptVersion],
+        set: {
+          model: MODELS.LLM,
+          analysisJson: analysis,
+          embedding: embeddingVector,
+          createdAt: new Date(),
+        },
       });
 
     console.log(`Analysis stored for meeting ${meeting.id}`);
@@ -158,33 +144,90 @@ export async function processNextJob(): Promise<{
 }
 
 /**
+ * Process the next pending job
+ */
+export async function processNextJob(): Promise<{
+  success: boolean;
+  jobId?: string;
+  error?: string;
+} | null> {
+  // 1. Get a pending job
+  const [job] = await db
+    .select()
+    .from(processingJobs)
+    .where(eq(processingJobs.status, 'pending'))
+    .limit(1);
+
+  if (!job) {
+    return null; // No jobs to process
+  }
+
+  // 2. Mark as processing
+  await db
+    .update(processingJobs)
+    .set({
+      status: 'processing',
+      updatedAt: new Date(),
+    })
+    .where(eq(processingJobs.id, job.id));
+
+  // Delegate to internal processor
+  return processJobInternal(job);
+}
+
+/**
  * Process multiple jobs in parallel
  */
-export async function processBatchJobs(batchSize: number = 5): Promise<{
+export async function processBatchJobs(batchSize: number = 20): Promise<{
   processed: number;
   successful: number;
   failed: number;
   results: Array<{ success: boolean; jobId?: string; error?: string }>;
 }> {
-  const results = [];
-  let successful = 0;
-  let failed = 0;
+  // 1. Fetch batch of pending jobs
+  const jobs = await db
+    .select()
+    .from(processingJobs)
+    .where(eq(processingJobs.status, 'pending'))
+    .limit(batchSize);
 
-  for (let i = 0; i < batchSize; i++) {
-    const result = await processNextJob();
-
-    if (!result) {
-      break; // No more jobs
-    }
-
-    results.push(result);
-
-    if (result.success) {
-      successful++;
-    } else {
-      failed++;
-    }
+  if (jobs.length === 0) {
+    return {
+      processed: 0,
+      successful: 0,
+      failed: 0,
+      results: [],
+    };
   }
+
+  // 2. Mark all as processing immediately to prevent other workers from picking them up
+  // We do this in a loop or a single query. Single query is better but Drizzle syntax for "where id in array" needed.
+  // For simplicity and safety, let's update them one by one or use Promise.all for updates first.
+  // Actually, to be safe against race conditions, we should have locked them in the select, but for now:
+
+  const jobIds = jobs.map(j => j.id);
+
+  // Update status to 'processing'
+  // Note: In a real high-concurrency env, we'd use SELECT FOR UPDATE or a single UPDATE ... RETURNING
+  // But here, let's just update them.
+  for (const job of jobs) {
+    await db
+      .update(processingJobs)
+      .set({
+        status: 'processing',
+        updatedAt: new Date(),
+      })
+      .where(eq(processingJobs.id, job.id));
+  }
+
+  // 3. Process in parallel
+  console.log(`Starting parallel processing of ${jobs.length} jobs...`);
+
+  const promises = jobs.map(job => processJobInternal(job));
+  const results = await Promise.all(promises);
+
+  const successful = results.filter(r => r.success).length;
+  const failed = results.filter(r => !r.success).length;
 
   return {
     processed: results.length,

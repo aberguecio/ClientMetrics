@@ -52,36 +52,67 @@ export function isAutoProcessorRunning(): boolean {
 }
 
 /**
+ * Trigger immediate job processing
+ * Can be called from API routes after adding new jobs
+ */
+export function triggerJobProcessing() {
+  if (!isRunning) {
+    console.log('Auto-processor not running, starting it temporarily...');
+    isRunning = true;
+  }
+
+  // Trigger processing immediately without waiting for interval
+  processJobsContinuously();
+}
+
+/**
  * Process jobs continuously until no more pending jobs
  */
+// Flag to prevent overlapping processing cycles
+let isProcessing = false;
+
 async function processJobsContinuously() {
+  // Prevent overlapping execution
+  if (isProcessing) {
+    return;
+  }
+
+  isProcessing = true;
+
   try {
-    // Check if there are pending jobs
-    const stats = await getJobStats();
+    let hasMoreJobs = true;
 
-    if (stats.pending === 0) {
-      // No pending jobs, skip this cycle
-      return;
-    }
+    // Loop until no more jobs or error
+    while (hasMoreJobs) {
+      // Check if there are pending jobs
+      const stats = await getJobStats();
 
-    console.log(`Auto-processor: ${stats.pending} pending jobs found`);
+      if (stats.pending === 0) {
+        hasMoreJobs = false;
+        break;
+      }
 
-    // Process a batch
-    const result = await processBatchJobs(5);
+      console.log(`Auto-processor: ${stats.pending} pending jobs found`);
 
-    if (result.processed > 0) {
-      console.log(
-        `Auto-processor: Processed ${result.processed} jobs (${result.successful} successful, ${result.failed} failed)`
-      );
-    }
+      // Process a batch (increased to 20 as requested)
+      const result = await processBatchJobs(20);
 
-    // If there are still pending jobs, process again immediately
-    if (stats.pending > result.processed) {
-      // Wait a bit to avoid overwhelming the system
-      await new Promise((resolve) => setTimeout(resolve, 2000));
-      await processJobsContinuously();
+      if (result.processed > 0) {
+        console.log(
+          `Auto-processor: Processed ${result.processed} jobs (${result.successful} successful, ${result.failed} failed)`
+        );
+      }
+
+      // If we processed fewer jobs than batch size, it means we're done
+      if (result.processed < 20) {
+        hasMoreJobs = false;
+      }
+
+      // No delay between batches - process as fast as possible
     }
   } catch (error) {
     console.error('Auto-processor error:', error);
+  } finally {
+    isProcessing = false;
   }
 }

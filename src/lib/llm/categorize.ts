@@ -28,7 +28,7 @@ export async function categorizeMeeting(params: CategorizationParams): Promise<A
         },
       ],
       response_format: { type: 'json_object' },
-      temperature: 0.3, // Lower temperature for more consistent results
+      temperature: 1, // Lower temperature for more consistent results
     });
 
     const content = response.choices[0]?.message?.content;

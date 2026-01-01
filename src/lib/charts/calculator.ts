@@ -33,7 +33,14 @@ export async function calculateChartData(
     return calculateWordCloudData(meetings, chart);
   }
 
-  // 4. Determine grouping field based on chart type
+  // 4. Handle vector cluster chart type
+  if (chart.chart_type === 'vector_cluster') {
+    // Dynamic import to avoid circular dependencies if any, though here it's fine
+    const { calculateVectorClusterData } = require('./vector-calculator');
+    return calculateVectorClusterData(meetings, chart);
+  }
+
+  // 5. Determine grouping field based on chart type
   // For pie charts: use group_by
   // For bar/line/area: use x_axis for primary grouping, group_by for series
   const primaryGroupField = chart.chart_type === 'pie' ? chart.group_by : chart.x_axis;

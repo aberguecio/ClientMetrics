@@ -238,6 +238,38 @@ export const CHART_TYPE_CONFIGS: Record<ChartType, ChartTypeConfig> = {
     supportsTimeSeries: false,
     supportsMultipleSeries: false,
   },
+
+  vector_cluster: {
+    chartType: 'vector_cluster',
+    label: 'Vector Cluster',
+    icon: '🔮',
+    description: 'Agrupa reuniones similares usando embeddings',
+    axisRequirements: [
+      {
+        role: AxisRole.X_AXIS, // Used for the vector field
+        required: true,
+        allowedCategories: [
+          FieldCategory.FREE_TEXT, // Embeddings are stored as text
+        ],
+        description: 'Variable Vectorial',
+        helpText: 'Campo que contiene los embeddings (vectores)',
+      },
+      {
+        role: AxisRole.Y_AXIS, // Used for the label field
+        required: true,
+        allowedCategories: [
+          FieldCategory.CATEGORICAL,
+          FieldCategory.FREE_TEXT,
+        ],
+        description: 'Etiqueta',
+        helpText: 'Campo a mostrar en el tooltip',
+      },
+    ],
+    allowedAggregations: ['count'],
+    defaultAggregation: 'count',
+    supportsTimeSeries: false,
+    supportsMultipleSeries: false,
+  },
 };
 
 // ===== HELPER FUNCTIONS =====

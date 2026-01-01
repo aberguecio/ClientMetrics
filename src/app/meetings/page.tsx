@@ -25,7 +25,7 @@ export default async function MeetingsPage({
     cache: 'no-store', // Siempre obtener datos frescos
   });
 
-  let data = { meetings: [], page: 1, limit: 50, total: 0, totalPages: 0 };
+  let data = { meetings: [], page: 1, limit: 60, total: 0, totalPages: 0 };
 
   if (response.ok) {
     data = await response.json();

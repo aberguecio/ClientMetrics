@@ -10,6 +10,6 @@ export const openai = new OpenAI({
 
 // Models configuration
 export const MODELS = {
-  LLM: 'gpt-4o-mini',
+  LLM: 'gpt-5-mini',
   EMBEDDING: 'text-embedding-3-small',
 } as const;

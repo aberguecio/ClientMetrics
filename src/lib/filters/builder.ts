@@ -17,7 +17,7 @@ function getNestedValue(obj: any, path: string): any {
  * @param filter - Merged filter object containing all filter criteria
  * @returns Array of meetings matching the filter criteria
  */
-export async function getMeetingsWithFilters(filter: MergedFilter): Promise<(SalesMeeting & { analysis?: any })[]> {
+export async function getMeetingsWithFilters(filter: MergedFilter): Promise<(SalesMeeting & { analysis?: any; embedding?: string | null })[]> {
   console.log('🔍 [BUILDER] Building query with filter:', JSON.stringify(filter, null, 2));
 
   const conditions: SQL[] = [];
@@ -49,6 +49,7 @@ export async function getMeetingsWithFilters(filter: MergedFilter): Promise<(Sal
     .select({
       meeting: salesMeetings,
       analysis: llmAnalysis.analysisJson,
+      embedding: llmAnalysis.embedding,
     })
     .from(salesMeetings)
     .leftJoin(llmAnalysis, eq(salesMeetings.id, llmAnalysis.meetingId))
@@ -60,6 +61,7 @@ export async function getMeetingsWithFilters(filter: MergedFilter): Promise<(Sal
   let filteredMeetings = meetingsWithAnalysis.map((row) => ({
     ...row.meeting,
     analysis: row.analysis,
+    embedding: row.embedding,
   }));
 
   const initialCount = filteredMeetings.length;

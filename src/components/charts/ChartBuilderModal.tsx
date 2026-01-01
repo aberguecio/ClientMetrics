@@ -135,6 +135,13 @@ export default function ChartBuilderModal({
         payload.y_axis = 'count';
         payload.aggregation = 'count';
         payload.group_by = groupBy || '';
+      } else if (chartType === 'vector_cluster') {
+        payload.x_axis = xAxis || 'embedding';
+        payload.k_clusters = parseInt(groupBy) || 3; // Store K in k_clusters
+        payload.label_field = yAxis; // Store label field in label_field
+        payload.y_axis = yAxis; // Set y_axis to label field to pass validation (expects Categorical/Text)
+        payload.aggregation = 'count'; // Default
+        payload.group_by = '';
       } else {
         payload.x_axis = xAxis;
         payload.group_by = groupBy || ''; // Optional for bar/line/area (multiple series)
@@ -202,7 +209,7 @@ export default function ChartBuilderModal({
           <div>
             <h3 className={styles.stepTitle}>Step 1 of 3: Chart Type</h3>
             <div className={styles.chartTypeGrid}>
-              {(['pie', 'bar', 'line', 'area', 'wordcloud'] as ChartType[]).map((type) => (
+              {(['pie', 'bar', 'line', 'area', 'wordcloud', 'vector_cluster'] as ChartType[]).map((type) => (
                 <button
                   key={type}
                   className={`${styles.chartTypeButton} ${chartType === type ? styles.active : ''}`}
@@ -214,9 +221,10 @@ export default function ChartBuilderModal({
                     {type === 'line' && '📈'}
                     {type === 'area' && '📉'}
                     {type === 'wordcloud' && '☁️'}
+                    {type === 'vector_cluster' && '🔮'}
                   </div>
                   <div className={styles.chartTypeName}>
-                    {type.charAt(0).toUpperCase() + type.slice(1)} Chart
+                    {type === 'vector_cluster' ? 'Vector Cluster' : type.charAt(0).toUpperCase() + type.slice(1) + ' Chart'}
                   </div>
                 </button>
               ))}
@@ -225,6 +233,55 @@ export default function ChartBuilderModal({
         );
 
       case 2:
+        if (chartType === 'vector_cluster') {
+          return (
+            <div>
+              <h3 className={styles.stepTitle}>Step 2 of 3: Configure Clustering</h3>
+              <div className={styles.formGrid}>
+                <div>
+                  <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600 }}>
+                    Variable Vectorial *
+                  </label>
+                  <select
+                    value={xAxis} // Reuse xAxis to store the vector field
+                    onChange={(e) => setXAxis(e.target.value)}
+                    style={{ width: '100%', padding: '0.5rem', border: '1px solid #d1d5db', borderRadius: '0.375rem' }}
+                  >
+                    <option value="">Seleccionar...</option>
+                    <option value="embedding">Embedding (Default)</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600 }}>
+                    Cantidad de Grupos (K) *
+                  </label>
+                  <input
+                    type="number"
+                    min="2"
+                    max="10"
+                    value={groupBy || 3} // Reuse groupBy to store K (as string)
+                    onChange={(e) => setGroupBy(e.target.value)}
+                    style={{ width: '100%', padding: '0.5rem', border: '1px solid #d1d5db', borderRadius: '0.375rem' }}
+                  />
+                </div>
+
+                <div>
+                  <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600 }}>
+                    Valor a Mostrar (Label) *
+                  </label>
+                  <VariableSelector
+                    label=""
+                    value={yAxis} // Reuse yAxis to store label field
+                    onChange={(value) => setYAxis(value)}
+                    allowedCategories={[FieldCategory.CATEGORICAL, FieldCategory.FREE_TEXT]}
+                    required={true}
+                  />
+                </div>
+              </div>
+            </div>
+          );
+        }
         const chartConfig = getChartConfig(chartType);
         return (
           <div>
@@ -238,8 +295,8 @@ export default function ChartBuilderModal({
                       requirement.role === AxisRole.X_AXIS || requirement.role === AxisRole.TEXT_FIELD
                         ? xAxis
                         : requirement.role === AxisRole.Y_AXIS
-                        ? yAxis
-                        : groupBy
+                          ? yAxis
+                          : groupBy
                     }
                     onChange={(value) => {
                       if (requirement.role === AxisRole.X_AXIS || requirement.role === AxisRole.TEXT_FIELD) {

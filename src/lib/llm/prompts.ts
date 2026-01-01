@@ -142,7 +142,8 @@ IMPORTANT:
 - Always normalize interaction_volume to DAILY
 - Use "others" field generously for context that doesn't fit elsewhere
 - Arrays can be empty [] if not mentioned. Booleans default to false if not discussed
-- Respond ONLY with valid JSON, no additional text or markdown.`;
+- Respond ONLY with valid JSON, no additional text or markdown.
+- CRITICAL: Use the EXACT enum values provided (e.g., "pricing", "availability"). DO NOT translate them to Spanish or any other language, even if the transcript is in Spanish.`;
 
 export function buildCategorizationPrompt(params: {
   clientName: string;

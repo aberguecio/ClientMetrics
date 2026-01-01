@@ -88,6 +88,15 @@ export function validateChartConfig(config: ChartConfigToValidate): ValidationRe
     });
   }
 
+  if (!chartConfig) {
+    errors.push({
+      type: ValidationErrorType.UNKNOWN_FIELD,
+      field: 'chart_type',
+      message: `Tipo de gráfico no configurado: ${config.chart_type}`,
+    });
+    return { valid: false, errors, warnings };
+  }
+
   // ===== 2. VALIDATE AXIS REQUIREMENTS =====
   for (const requirement of chartConfig.axisRequirements) {
     let fieldValue: string = '';

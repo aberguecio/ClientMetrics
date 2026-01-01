@@ -117,6 +117,46 @@ export default function JobProcessor() {
       <div className={styles.info}>
         <p>Los trabajos se procesan automáticamente en segundo plano. No se requiere acción manual.</p>
       </div>
+
+      {stats.failed > 0 && (
+        <div className={styles.actions}>
+          <button
+            onClick={async () => {
+              if (!confirm('¿Estás seguro de que quieres reintentar todos los trabajos fallidos?')) return;
+
+              try {
+                setLoading(true);
+                const res = await fetch('/api/jobs/retry-failed', { method: 'POST' });
+                const data = await res.json();
+                if (data.success) {
+                  alert(data.message);
+                  fetchStats();
+                } else {
+                  alert('Error: ' + data.error);
+                }
+              } catch (e) {
+                alert('Error de conexión');
+              } finally {
+                setLoading(false);
+              }
+            }}
+            className={styles.retryButton}
+            style={{
+              marginTop: '1rem',
+              padding: '0.5rem 1rem',
+              backgroundColor: '#ef4444',
+              color: 'white',
+              border: 'none',
+              borderRadius: '0.375rem',
+              cursor: 'pointer',
+              fontWeight: 500,
+              width: '100%'
+            }}
+          >
+            🔄 Reintentar todos los fallidos ({stats.failed})
+          </button>
+        </div>
+      )}
     </div>
   );
 }

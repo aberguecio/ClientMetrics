@@ -1,6 +1,6 @@
 'use client';
 
-import { PieChart, Pie, BarChart, Bar, LineChart, Line, AreaChart, Area, Cell, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from 'recharts';
+import { PieChart, Pie, BarChart, Bar, LineChart, Line, AreaChart, Area, ScatterChart, Scatter, Cell, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import { Wordcloud } from '@visx/wordcloud';
 import type { SavedChart, ChartData, WordCloudData } from '@/types/charts';
 
@@ -234,6 +234,35 @@ export default function ChartRenderer({ chart, data }: ChartRendererProps) {
               <Area type="monotone" dataKey="value" stroke={colors[0]} fill={colors[0]} name={getFieldLabel(chart.y_axis)} />
             )}
           </AreaChart>
+        </ResponsiveContainer>
+      );
+
+    case 'vector_cluster':
+      const scatterData = data as any[];
+      return (
+        <ResponsiveContainer width="100%" height={400}>
+          <ScatterChart margin={{ top: 20, right: 20, bottom: 20, left: 20 }}>
+            <XAxis type="number" dataKey="x" name="PC1" hide />
+            <YAxis type="number" dataKey="y" name="PC2" hide />
+            <Tooltip cursor={{ strokeDasharray: '3 3' }} content={({ active, payload }) => {
+              if (active && payload && payload.length) {
+                const data = payload[0].payload;
+                return (
+                  <div style={{ backgroundColor: 'white', padding: '10px', border: '1px solid #ccc' }}>
+                    <p><strong>{data.tooltipLabel}</strong></p>
+                    <p>Cluster: {data.cluster + 1}</p>
+                  </div>
+                );
+              }
+              return null;
+            }} />
+            <Legend />
+            <Scatter name="Meetings" data={scatterData} fill="#8884d8">
+              {scatterData.map((entry: any, index: number) => (
+                <Cell key={`cell-${index}`} fill={entry.fill} />
+              ))}
+            </Scatter>
+          </ScatterChart>
         </ResponsiveContainer>
       );
 
