@@ -1,30 +1,15 @@
-import { startAutoProcessor } from './jobs/auto-processor';
-
-let initialized = false;
-
 /**
  * Initialize the application
- * Starts background services like the auto-processor
+ * Resets stuck jobs on startup
  */
-export function initializeApp() {
-  // Prevent multiple initializations
-  if (initialized) {
-    return;
+export async function initializeApp() {
+  try {
+    // Reset any stuck jobs from previous runs
+    const { resetStuckJobs } = await import('./jobs/processor');
+    await resetStuckJobs();
+
+    console.log('Application initialized successfully');
+  } catch (error) {
+    console.error('Failed to initialize app:', error);
   }
-
-  console.log('Initializing application...');
-
-  // Start auto-processor with 10 second interval
-  // This will continuously process pending jobs in the background
-  startAutoProcessor(10000);
-
-  initialized = true;
-  console.log('Application initialized successfully');
-}
-
-/**
- * Check if app is initialized
- */
-export function isInitialized(): boolean {
-  return initialized;
 }

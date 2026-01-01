@@ -4,8 +4,31 @@ import { eq, sql } from 'drizzle-orm';
 import { categorizeMeetingWithRetry } from '@/lib/llm/categorize';
 import { generateEmbeddingWithRetry, buildEmbeddingText } from '@/lib/llm/embeddings';
 import { MODELS } from '@/lib/llm/openai';
+import { triggerJobProcessing } from './auto-processor';
 
 const MAX_ATTEMPTS = 3;
+
+/**
+ * Reset any jobs that were stuck in 'processing' state back to 'pending'
+ * This should be called on application startup
+ */
+export async function resetStuckJobs() {
+  const result = await db
+    .update(processingJobs)
+    .set({
+      status: 'pending',
+      updatedAt: new Date(),
+    })
+    .where(eq(processingJobs.status, 'processing'))
+    .returning();
+
+  if (result.length > 0) {
+    console.log(`Reset ${result.length} stuck jobs from 'processing' to 'pending'`);
+  }
+  triggerJobProcessing();
+
+  return result.length;
+}
 
 /**
  * Create a new processing job for a meeting
@@ -144,96 +167,104 @@ async function processJobInternal(job: { id: string; meetingId: string; attempts
 }
 
 /**
- * Process the next pending job
+ * Fetch and claim the next pending job atomically
+ * Uses SKIP LOCKED to prevent race conditions between concurrent workers
  */
-export async function processNextJob(): Promise<{
-  success: boolean;
-  jobId?: string;
-  error?: string;
-} | null> {
-  // 1. Get a pending job
-  const [job] = await db
-    .select()
-    .from(processingJobs)
-    .where(eq(processingJobs.status, 'pending'))
-    .limit(1);
+async function fetchNextJob() {
+  // Use raw SQL for atomic fetch-and-update with SKIP LOCKED
+  // This ensures multiple workers don't pick the same job
+  const result = await db.execute(sql`
+    UPDATE ${processingJobs}
+    SET status = 'processing', updated_at = NOW()
+    WHERE id = (
+      SELECT id
+      FROM ${processingJobs}
+      WHERE status = 'pending'
+      LIMIT 1
+      FOR UPDATE SKIP LOCKED
+    )
+    RETURNING *
+  `);
 
-  if (!job) {
-    return null; // No jobs to process
+  // For node-postgres, result is a QueryResult object with a rows property
+  const rows = (result as any).rows;
+
+  if (!rows || rows.length === 0) {
+    return undefined;
   }
 
-  // 2. Mark as processing
-  await db
-    .update(processingJobs)
-    .set({
-      status: 'processing',
-      updatedAt: new Date(),
-    })
-    .where(eq(processingJobs.id, job.id));
+  const rawJob = rows[0];
 
-  // Delegate to internal processor
-  return processJobInternal(job);
+  // Map raw snake_case to camelCase matches Drizzle schema
+  return {
+    id: rawJob.id,
+    meetingId: rawJob.meeting_id,
+    status: rawJob.status,
+    attempts: rawJob.attempts,
+    errorMessage: rawJob.error_message,
+    createdAt: rawJob.created_at,
+    updatedAt: rawJob.updated_at,
+  };
 }
 
 /**
- * Process multiple jobs in parallel
+ * Process jobs concurrently using a worker pool
+ * Each worker continuously fetches and processes jobs until the queue is empty
  */
-export async function processBatchJobs(batchSize: number = 20): Promise<{
+export async function processJobsConcurrently(concurrency: number = 20): Promise<{
   processed: number;
   successful: number;
   failed: number;
-  results: Array<{ success: boolean; jobId?: string; error?: string }>;
 }> {
-  // 1. Fetch batch of pending jobs
-  const jobs = await db
-    .select()
-    .from(processingJobs)
-    .where(eq(processingJobs.status, 'pending'))
-    .limit(batchSize);
+  let processed = 0;
+  let successful = 0;
+  let failed = 0;
 
-  if (jobs.length === 0) {
-    return {
-      processed: 0,
-      successful: 0,
-      failed: 0,
-      results: [],
-    };
+  // Worker function: keeps taking jobs until none are left
+  const worker = async (workerId: number) => {
+    console.log(`Worker ${workerId} started`);
+
+    while (true) {
+      try {
+        const job = await fetchNextJob();
+
+        if (!job) {
+          // No more jobs available
+          break;
+        }
+
+        // Process the job
+        const result = await processJobInternal(job);
+
+        processed++;
+        if (result.success) {
+          successful++;
+        } else {
+          failed++;
+        }
+      } catch (error) {
+        console.error(`Worker ${workerId} error:`, error);
+        // Don't crash the worker, just try next job
+      }
+    }
+
+    console.log(`Worker ${workerId} finished`);
+  };
+
+  // Start N workers
+  console.log(`Starting ${concurrency} concurrent workers...`);
+  const workers = [];
+  for (let i = 0; i < concurrency; i++) {
+    workers.push(worker(i + 1));
   }
 
-  // 2. Mark all as processing immediately to prevent other workers from picking them up
-  // We do this in a loop or a single query. Single query is better but Drizzle syntax for "where id in array" needed.
-  // For simplicity and safety, let's update them one by one or use Promise.all for updates first.
-  // Actually, to be safe against race conditions, we should have locked them in the select, but for now:
-
-  const jobIds = jobs.map(j => j.id);
-
-  // Update status to 'processing'
-  // Note: In a real high-concurrency env, we'd use SELECT FOR UPDATE or a single UPDATE ... RETURNING
-  // But here, let's just update them.
-  for (const job of jobs) {
-    await db
-      .update(processingJobs)
-      .set({
-        status: 'processing',
-        updatedAt: new Date(),
-      })
-      .where(eq(processingJobs.id, job.id));
-  }
-
-  // 3. Process in parallel
-  console.log(`Starting parallel processing of ${jobs.length} jobs...`);
-
-  const promises = jobs.map(job => processJobInternal(job));
-  const results = await Promise.all(promises);
-
-  const successful = results.filter(r => r.success).length;
-  const failed = results.filter(r => !r.success).length;
+  // Wait for all workers to finish
+  await Promise.all(workers);
 
   return {
-    processed: results.length,
+    processed,
     successful,
     failed,
-    results,
   };
 }
 
