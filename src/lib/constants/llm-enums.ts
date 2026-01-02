@@ -14,7 +14,7 @@ export const SECTOR_VALUES = [
   'otros',
 ] as const;
 
-export type SectorValue = typeof SECTOR_VALUES[number];
+type SectorValue = typeof SECTOR_VALUES[number];
 
 export const SECTOR_LABELS: Record<SectorValue, string> = {
   tecnologia_software: 'Tecnología y Software',
@@ -41,7 +41,7 @@ export const DISCOVERY_CHANNEL_VALUES = [
   'otro',
 ] as const;
 
-export type DiscoveryChannelValue = typeof DISCOVERY_CHANNEL_VALUES[number];
+type DiscoveryChannelValue = typeof DISCOVERY_CHANNEL_VALUES[number];
 
 export const DISCOVERY_CHANNEL_LABELS: Record<DiscoveryChannelValue, string> = {
   referencia: 'Referencia (Colega/Amigo)',
@@ -55,7 +55,7 @@ export const DISCOVERY_CHANNEL_LABELS: Record<DiscoveryChannelValue, string> = {
 // Company size values and labels
 export const COMPANY_SIZE_VALUES = ['pequeña', 'mediana', 'grande'] as const;
 
-export type CompanySizeValue = typeof COMPANY_SIZE_VALUES[number];
+type CompanySizeValue = typeof COMPANY_SIZE_VALUES[number];
 
 export const COMPANY_SIZE_LABELS: Record<CompanySizeValue, string> = {
   pequeña: 'Pequeña',
@@ -95,7 +95,7 @@ export const PERSONALIZATION_VALUES = [
   'by_product_or_service',
 ] as const;
 
-export type PersonalizationValue = typeof PERSONALIZATION_VALUES[number];
+type PersonalizationValue = typeof PERSONALIZATION_VALUES[number];
 
 export const PERSONALIZATION_LABELS: Record<PersonalizationValue, string> = {
   by_customer_type: 'Por tipo de cliente',
@@ -117,7 +117,7 @@ export const INTEGRATION_VALUES = [
   'erp',
 ] as const;
 
-export type IntegrationValue = typeof INTEGRATION_VALUES[number];
+type IntegrationValue = typeof INTEGRATION_VALUES[number];
 
 export const INTEGRATION_LABELS: Record<IntegrationValue, string> = {
   scheduling: 'Calendario / Citas / Reservaciones',
@@ -138,7 +138,7 @@ export const DEMAND_PEAK_VALUES = [
   'events',
 ] as const;
 
-export type DemandPeakValue = typeof DEMAND_PEAK_VALUES[number];
+type DemandPeakValue = typeof DEMAND_PEAK_VALUES[number];
 
 export const DEMAND_PEAK_LABELS: Record<DemandPeakValue, string> = {
   promotions: 'Promociones',
@@ -195,39 +195,3 @@ export const TOOL_LABELS: Record<ToolValue, string> = {
   hubspot: 'HubSpot',
   custom_system: 'Sistema personalizado',
 };
-
-// Helper functions
-export function getPersonalizationOptions() {
-  return PERSONALIZATION_VALUES.map(value => ({
-    value,
-    label: PERSONALIZATION_LABELS[value],
-  }));
-}
-
-export function getIntegrationOptions() {
-  return INTEGRATION_VALUES.map(value => ({
-    value,
-    label: INTEGRATION_LABELS[value],
-  }));
-}
-
-export function getDemandPeakOptions() {
-  return DEMAND_PEAK_VALUES.map(value => ({
-    value,
-    label: DEMAND_PEAK_LABELS[value],
-  }));
-}
-
-export function getQueryTypeOptions() {
-  return QUERY_TYPE_VALUES.map(value => ({
-    value,
-    label: QUERY_TYPE_LABELS[value],
-  }));
-}
-
-export function getToolOptions() {
-  return TOOL_VALUES.map(value => ({
-    value,
-    label: TOOL_LABELS[value],
-  }));
-}

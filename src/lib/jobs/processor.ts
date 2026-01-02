@@ -31,22 +31,6 @@ export async function resetStuckJobs() {
 }
 
 /**
- * Create a new processing job for a meeting
- */
-export async function createJob(meetingId: string) {
-  const [job] = await db
-    .insert(processingJobs)
-    .values({
-      meetingId,
-      status: 'pending',
-      attempts: 0,
-    })
-    .returning();
-
-  return job;
-}
-
-/**
  * Create jobs for multiple meetings
  */
 export async function createJobs(meetingIds: string[]) {

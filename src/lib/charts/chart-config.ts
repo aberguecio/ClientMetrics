@@ -50,7 +50,7 @@ export interface ChartTypeConfig {
  *
  * Defines all chart types and their compatibility requirements
  */
-export const CHART_TYPE_CONFIGS: Record<ChartType, ChartTypeConfig> = {
+const CHART_TYPE_CONFIGS: Record<ChartType, ChartTypeConfig> = {
   pie: {
     chartType: 'pie',
     label: 'Gráfico de Pastel',
@@ -281,12 +281,6 @@ export function getChartConfig(chartType: ChartType): ChartTypeConfig {
   return CHART_TYPE_CONFIGS[chartType];
 }
 
-/**
- * Get all available chart type configurations
- */
-export function getAllChartConfigs(): ChartTypeConfig[] {
-  return Object.values(CHART_TYPE_CONFIGS);
-}
 
 /**
  * Get axis requirement for a specific role in a chart type
@@ -299,18 +293,6 @@ export function getAxisRequirement(
   return config.axisRequirements.find(req => req.role === role) || null;
 }
 
-/**
- * Check if a field category is compatible with a specific axis role in a chart type
- */
-export function isCategoryCompatibleWithAxis(
-  fieldCategory: FieldCategory,
-  chartType: ChartType,
-  role: AxisRole
-): boolean {
-  const requirement = getAxisRequirement(chartType, role);
-  if (!requirement) return false;
-  return requirement.allowedCategories.includes(fieldCategory);
-}
 
 /**
  * Check if an aggregation type is allowed for a chart type
@@ -328,11 +310,4 @@ export function isAggregationAllowed(
  */
 export function getAllowedAggregations(chartType: ChartType): AggregationType[] {
   return getChartConfig(chartType).allowedAggregations;
-}
-
-/**
- * Get default aggregation for a chart type
- */
-export function getDefaultAggregation(chartType: ChartType): AggregationType {
-  return getChartConfig(chartType).defaultAggregation;
 }

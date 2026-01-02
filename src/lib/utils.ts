@@ -28,13 +28,6 @@ export function formatDate(date: Date | string): string {
   });
 }
 
-export function formatCurrency(amount: number): string {
-  return new Intl.NumberFormat('es-ES', {
-    style: 'currency',
-    currency: 'USD'
-  }).format(amount)
-}
-
 export function calculatePercentage(value: number, total: number): number {
   if (total === 0) return 0
   return Math.round((value / total) * 100)

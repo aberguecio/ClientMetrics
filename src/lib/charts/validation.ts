@@ -233,24 +233,3 @@ export function getValidationErrorMessages(result: ValidationResult): string[] {
     ...result.warnings.map(w => `⚠️ ${w.message}`),
   ];
 }
-
-/**
- * Get only error messages (no warnings)
- */
-export function getValidationErrors(result: ValidationResult): string[] {
-  return result.errors.map(e => e.message);
-}
-
-/**
- * Get only warning messages (no errors)
- */
-export function getValidationWarnings(result: ValidationResult): string[] {
-  return result.warnings.map(w => w.message);
-}
-
-/**
- * Check if a validation result has any issues (errors or warnings)
- */
-export function hasValidationIssues(result: ValidationResult): boolean {
-  return result.errors.length > 0 || result.warnings.length > 0;
-}

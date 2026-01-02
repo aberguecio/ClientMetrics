@@ -58,7 +58,7 @@ export interface FieldMetadata {
  * All fields available in the system are registered here with complete metadata.
  * This is the single source of truth for field information.
  */
-export const FIELD_REGISTRY: Record<string, FieldMetadata> = {
+const FIELD_REGISTRY: Record<string, FieldMetadata> = {
   // ===== BASE FIELDS (not from LLM analysis) =====
 
   salesRep: {
@@ -329,13 +329,6 @@ export function getFieldMetadata(key: string): FieldMetadata | null {
 }
 
 /**
- * Get all fields of a specific category
- */
-export function getFieldsByCategory(category: FieldCategory): FieldMetadata[] {
-  return Object.values(FIELD_REGISTRY).filter(f => f.category === category);
-}
-
-/**
  * Get all fields matching any of the provided categories
  */
 export function getFieldsByCategories(categories: FieldCategory[]): FieldMetadata[] {
@@ -357,23 +350,3 @@ export function isFieldClosedArray(key: string): boolean {
   return getFieldMetadata(key)?.category === FieldCategory.CLOSED_ARRAY;
 }
 
-/**
- * Check if a field is temporal (supports time grouping)
- */
-export function isFieldTemporal(key: string): boolean {
-  return getFieldMetadata(key)?.temporal || false;
-}
-
-/**
- * Get all available field keys
- */
-export function getAllFieldKeys(): string[] {
-  return Object.keys(FIELD_REGISTRY);
-}
-
-/**
- * Get all available fields
- */
-export function getAllFields(): FieldMetadata[] {
-  return Object.values(FIELD_REGISTRY);
-}

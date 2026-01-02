@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
 // Validation schema for each CSV row
-export const MeetingRowSchema = z.object({
+const MeetingRowSchema = z.object({
   'Nombre': z.string().min(1, 'El nombre es requerido'),
   'Correo Electronico': z.string().email('Email inválido'),
   'Numero de Telefono': z.string().min(1, 'El teléfono es requerido'),
