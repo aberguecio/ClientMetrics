@@ -1,27 +1,37 @@
 'use client';
 
 import ChartCard from '@/components/charts/ChartCard';
-import type { SavedChart, SavedFilter } from '@/types/charts';
+import type { SavedChart } from '@/types/charts';
 import styles from './ChartsGrid.module.css';
 
 interface ChartsGridProps {
-  charts: Array<SavedChart & { chart_filter?: SavedFilter }>;
+  charts: SavedChart[];
+  loading?: boolean;
   activeFilterIds: string[];
-  onEdit: (chart: SavedChart) => void;
-  onDelete: (chartId: string) => void;
+  onEditChart: (chart: SavedChart) => void;
+  onDeleteChart: (chartId: string) => void;
 }
 
 export default function ChartsGrid({
   charts,
+  loading,
   activeFilterIds,
-  onEdit,
-  onDelete,
+  onEditChart,
+  onDeleteChart,
 }: ChartsGridProps) {
+  if (loading) {
+    return (
+      <div className={styles.emptyState}>
+        <p>Cargando gráficos...</p>
+      </div>
+    );
+  }
+
   if (charts.length === 0) {
     return (
       <div className={styles.emptyState}>
-        <p>No charts in this view yet.</p>
-        <p className={styles.hint}>Click "Create Chart" above to add your first chart.</p>
+        <p>No hay gráficos creados todavía.</p>
+        <p className={styles.hint}>Haz clic en "Crear Gráfico" arriba para agregar tu primer gráfico.</p>
       </div>
     );
   }
@@ -33,9 +43,9 @@ export default function ChartsGrid({
           key={chart.id}
           chart={chart}
           activeFilterIds={activeFilterIds}
-          chartFilterId={chart.chart_filter?.id}
-          onEdit={() => onEdit(chart)}
-          onDelete={() => onDelete(chart.id)}
+          chartFilterId={chart.chart_filter_id}
+          onEdit={() => onEditChart(chart)}
+          onDelete={() => onDeleteChart(chart.id)}
         />
       ))}
     </div>

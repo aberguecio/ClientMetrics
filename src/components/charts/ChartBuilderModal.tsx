@@ -12,9 +12,8 @@ import { FieldCategory } from '@/lib/charts/field-metadata';
 interface ChartBuilderModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSave?: ((chart: SavedChart) => void) | (() => void); // Can be callback with chart or just refresh
+  onSave?: ((chart: SavedChart) => void) | (() => void);
   editChart?: SavedChart;
-  // New props for dashboard integration
   currentViewId?: string | null;
   autoAddToView?: boolean;
 }
@@ -162,7 +161,6 @@ export default function ChartBuilderModal({
       // Auto-add to view if requested
       if (autoAddToView && currentViewId && !editChart) {
         try {
-          // Calculate max position from current view
           const viewResponse = await fetch(`/api/views/${currentViewId}`);
           if (viewResponse.ok) {
             const viewData = await viewResponse.json();
@@ -170,7 +168,6 @@ export default function ChartBuilderModal({
               ? Math.max(...viewData.charts.map((c: any) => c.position || 0))
               : -1;
 
-            // Add chart to view
             await fetch(`/api/views/${currentViewId}/charts`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
@@ -183,7 +180,6 @@ export default function ChartBuilderModal({
           }
         } catch (addError) {
           console.error('Error adding chart to view:', addError);
-          // Don't fail the whole operation if auto-add fails
         }
       }
 

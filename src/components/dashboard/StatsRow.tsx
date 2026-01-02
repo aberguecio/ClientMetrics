@@ -3,12 +3,16 @@
 import { useState, useEffect } from 'react';
 import StatsCard from '@/components/dashboard/StatsCard';
 import { mergeFilters } from '@/lib/filters/merger';
-import type { ViewWithDetails } from '@/types/charts';
+import type { SavedView, SavedFilter } from '@/types/charts';
 import type { AnalyticsData } from '@/types/api';
 import styles from './StatsRow.module.css';
 
+interface ViewWithFilters {
+  filters?: SavedFilter[];
+}
+
 interface StatsRowProps {
-  view: ViewWithDetails | null;
+  view: ViewWithFilters | null;
 }
 
 export default function StatsRow({ view }: StatsRowProps) {
