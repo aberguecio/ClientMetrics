@@ -30,19 +30,7 @@
   gap: 0.5rem;
 }
 
-.actionButton {
-  background: none;
-  border: none;
-  cursor: pointer;
-  padding: 0.25rem;
-  font-size: 1.25rem;
-  opacity: 0.7;
-  transition: opacity 0.2s;
-}
-
-.actionButton:hover {
-  opacity: 1;
-}
+/* Action button styles now use global class: .btn-icon */
 
 .content {
   min-height: 300px;

@@ -87,3 +87,200 @@ select {
   font-family: inherit;
   font-size: inherit;
 }
+
+/* ========================================
+   SISTEMA DE BOTONES UNIFICADO
+   ======================================== */
+
+/* Botón de ícono sin borde (editar, eliminar) */
+.btn-icon {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0.25rem;
+  font-size: 1.25rem;
+  opacity: 0.7;
+  transition: opacity 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.btn-icon:hover {
+  opacity: 1;
+}
+
+.btn-icon:active {
+  transform: scale(0.95);
+}
+
+/* Botón primario - Azul */
+.btn-primary {
+  padding: 0.5rem 1rem;
+  background-color: var(--primary-color);
+  color: white;
+  border: none;
+  border-radius: 0.375rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 0.875rem;
+}
+
+.btn-primary:hover:not(:disabled) {
+  background-color: var(--primary-hover);
+}
+
+.btn-primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Botón secundario - Blanco con borde */
+.btn-secondary {
+  padding: 0.5rem 1rem;
+  background-color: white;
+  color: #374151;
+  border: 1px solid var(--border-color);
+  border-radius: 0.375rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 0.875rem;
+}
+
+.btn-secondary:hover {
+  background-color: var(--bg-secondary);
+}
+
+/* Botón de éxito - Verde */
+.btn-success {
+  padding: 0.5rem 1rem;
+  background-color: #10b981;
+  color: white;
+  border: none;
+  border-radius: 0.375rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 0.875rem;
+}
+
+.btn-success:hover {
+  background-color: #059669;
+}
+
+/* Botón de peligro - Rojo */
+.btn-danger {
+  padding: 0.5rem 1rem;
+  background-color: #ef4444;
+  color: white;
+  border: none;
+  border-radius: 0.375rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 0.875rem;
+}
+
+.btn-danger:hover {
+  background-color: #dc2626;
+}
+
+/* Botón neutral - Gris */
+.btn-neutral {
+  padding: 0.5rem 1rem;
+  background-color: #6b7280;
+  color: white;
+  border: none;
+  border-radius: 0.375rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 0.875rem;
+}
+
+.btn-neutral:hover {
+  background-color: #4b5563;
+}
+
+/* Botón destacado (principal) */
+.btn-featured {
+  padding: 0.625rem 1.25rem;
+  background-color: var(--primary-color);
+  color: white;
+  border: none;
+  border-radius: 0.5rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 0.9375rem;
+}
+
+.btn-featured:hover {
+  background-color: var(--primary-hover);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.btn-featured:active {
+  transform: translateY(0);
+}
+
+/* ========================================
+   SISTEMA DE FORMS UNIFICADO
+   ======================================== */
+
+/* Select HTML nativo */
+.input-select {
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--border-color);
+  border-radius: 0.375rem;
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: border-color 0.2s;
+  width: 100%;
+}
+
+.input-select:hover {
+  border-color: var(--primary-color);
+}
+
+.input-select:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+/* Input de texto */
+.input-text {
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--border-color);
+  border-radius: 0.375rem;
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  font-size: 0.875rem;
+  transition: border-color 0.2s;
+  width: 100%;
+}
+
+.input-text:hover {
+  border-color: #9ca3af;
+}
+
+.input-text:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+/* Label */
+.input-label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-weight: 600;
+  color: #374151;
+  font-size: 0.875rem;
+}

@@ -103,3 +103,11 @@ export interface WordCloudData {
   text: string;
   value: number;
 }
+
+// Tipo para opciones dinámicas de filtros
+export interface FilterOptions {
+  salesReps: string[];
+  sectors: string[];
+  companySizes: string[];
+  discoveryChannels: string[];
+}

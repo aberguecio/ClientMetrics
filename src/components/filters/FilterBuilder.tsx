@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import type { SavedFilter } from '@/types/charts';
+import type { SavedFilter, FilterOptions } from '@/types/charts';
 import styles from './FilterBuilder.module.css';
 import { getSectorOptions, getDiscoveryChannelOptions, getCompanySizeOptions } from '@/lib/constants/llm-enums';
 
@@ -25,6 +25,25 @@ export default function FilterBuilder({ isOpen, onClose, editFilter, onSave }: F
     discovery_channel: '',
   });
   const [saving, setSaving] = useState(false);
+  const [filterOptions, setFilterOptions] = useState<FilterOptions | null>(null);
+  const [loadingOptions, setLoadingOptions] = useState(true);
+
+  // Load filter options when modal opens
+  useEffect(() => {
+    if (isOpen) {
+      setLoadingOptions(true);
+      fetch('/api/meetings/filter-options')
+        .then(res => res.json())
+        .then(data => {
+          setFilterOptions(data);
+          setLoadingOptions(false);
+        })
+        .catch(err => {
+          console.error('Error loading filter options:', err);
+          setLoadingOptions(false);
+        });
+    }
+  }, [isOpen]);
 
   // Reset form when modal opens or editFilter changes
   useEffect(() => {
@@ -129,7 +148,7 @@ export default function FilterBuilder({ isOpen, onClose, editFilter, onSave }: F
             <h3 className={styles.sectionTitle}>Información Básica</h3>
             <div className={styles.formGrid}>
               <div>
-                <label htmlFor="name" className={styles.label}>
+                <label htmlFor="name" className="input-label">
                   Nombre del Filtro *
                 </label>
                 <input
@@ -138,12 +157,12 @@ export default function FilterBuilder({ isOpen, onClose, editFilter, onSave }: F
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   placeholder="Ej: Ventas cerradas Q4"
-                  className={styles.input}
+                  className="input-text"
                 />
               </div>
 
               <div>
-                <label htmlFor="description" className={styles.label}>
+                <label htmlFor="description" className="input-label">
                   Descripción (opcional)
                 </label>
                 <textarea
@@ -152,7 +171,7 @@ export default function FilterBuilder({ isOpen, onClose, editFilter, onSave }: F
                   onChange={(e) => setDescription(e.target.value)}
                   placeholder="Descripción del filtro..."
                   rows={2}
-                  className={styles.input}
+                  className="input-text"
                 />
               </div>
             </div>
@@ -164,32 +183,34 @@ export default function FilterBuilder({ isOpen, onClose, editFilter, onSave }: F
             <div className={styles.formGrid}>
               {/* Sales Rep */}
               <div>
-                <label htmlFor="salesRep" className={styles.label}>
+                <label htmlFor="salesRep" className="input-label">
                   Vendedor:
                 </label>
                 <select
                   id="salesRep"
-                  className={styles.input}
+                  className="input-select"
                   value={filterData.sales_rep || 'all'}
                   onChange={(e) => handleFilterChange('sales_rep', e.target.value)}
                 >
                   <option value="all">Todos</option>
-                  <option value="Toro">Toro</option>
-                  <option value="Puma">Puma</option>
-                  <option value="Leon">Leon</option>
-                  <option value="Tigre">Tigre</option>
-                  <option value="Pantera">Pantera</option>
+                  {loadingOptions ? (
+                    <option disabled>Cargando...</option>
+                  ) : (
+                    filterOptions?.salesReps.map(rep => (
+                      <option key={rep} value={rep}>{rep}</option>
+                    ))
+                  )}
                 </select>
               </div>
 
               {/* Closed Status */}
               <div>
-                <label htmlFor="closed" className={styles.label}>
+                <label htmlFor="closed" className="input-label">
                   Estado:
                 </label>
                 <select
                   id="closed"
-                  className={styles.input}
+                  className="input-select"
                   value={filterData.closed || 'all'}
                   onChange={(e) => handleFilterChange('closed', e.target.value)}
                 >
@@ -201,12 +222,12 @@ export default function FilterBuilder({ isOpen, onClose, editFilter, onSave }: F
 
               {/* Sector */}
               <div>
-                <label htmlFor="sector" className={styles.label}>
+                <label htmlFor="sector" className="input-label">
                   Sector:
                 </label>
                 <select
                   id="sector"
-                  className={styles.input}
+                  className="input-select"
                   value={filterData.sector || 'all'}
                   onChange={(e) => handleFilterChange('sector', e.target.value)}
                 >
@@ -219,12 +240,12 @@ export default function FilterBuilder({ isOpen, onClose, editFilter, onSave }: F
 
               {/* Company Size */}
               <div>
-                <label htmlFor="company_size" className={styles.label}>
+                <label htmlFor="company_size" className="input-label">
                   Tamaño empresa:
                 </label>
                 <select
                   id="company_size"
-                  className={styles.input}
+                  className="input-select"
                   value={filterData.company_size || 'all'}
                   onChange={(e) => handleFilterChange('company_size', e.target.value)}
                 >
@@ -237,12 +258,12 @@ export default function FilterBuilder({ isOpen, onClose, editFilter, onSave }: F
 
               {/* Discovery Channel */}
               <div>
-                <label htmlFor="discovery_channel" className={styles.label}>
+                <label htmlFor="discovery_channel" className="input-label">
                   Canal:
                 </label>
                 <select
                   id="discovery_channel"
-                  className={styles.input}
+                  className="input-select"
                   value={filterData.discovery_channel || 'all'}
                   onChange={(e) => handleFilterChange('discovery_channel', e.target.value)}
                 >
@@ -255,13 +276,13 @@ export default function FilterBuilder({ isOpen, onClose, editFilter, onSave }: F
 
               {/* Date From */}
               <div>
-                <label htmlFor="date_from" className={styles.label}>
+                <label htmlFor="date_from" className="input-label">
                   Desde:
                 </label>
                 <input
                   id="date_from"
                   type="date"
-                  className={styles.input}
+                  className="input-text"
                   value={filterData.date_from}
                   onChange={(e) => handleFilterChange('date_from', e.target.value)}
                 />
@@ -269,13 +290,13 @@ export default function FilterBuilder({ isOpen, onClose, editFilter, onSave }: F
 
               {/* Date To */}
               <div>
-                <label htmlFor="date_to" className={styles.label}>
+                <label htmlFor="date_to" className="input-label">
                   Hasta:
                 </label>
                 <input
                   id="date_to"
                   type="date"
-                  className={styles.input}
+                  className="input-text"
                   value={filterData.date_to}
                   onChange={(e) => handleFilterChange('date_to', e.target.value)}
                 />
@@ -285,10 +306,10 @@ export default function FilterBuilder({ isOpen, onClose, editFilter, onSave }: F
         </div>
 
         <div className={styles.footer}>
-          <button onClick={onClose} className={styles.secondaryButton}>
+          <button onClick={onClose} className="btn-secondary">
             Cancel
           </button>
-          <button onClick={handleSave} disabled={saving} className={styles.primaryButton}>
+          <button onClick={handleSave} disabled={saving} className="btn-primary">
             {saving ? 'Saving...' : editFilter ? 'Update Filter' : 'Create Filter'}
           </button>
         </div>

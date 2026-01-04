@@ -25,12 +25,12 @@ export default function ViewCard({ view, onEdit, onDelete }: ViewCardProps) {
         </div>
         <div className={styles.actions}>
           {onEdit && (
-            <button onClick={onEdit} className={styles.actionButton} title="Edit view">
+            <button onClick={onEdit} className="btn-icon" title="Edit view">
               ✏️
             </button>
           )}
           {onDelete && (
-            <button onClick={onDelete} className={styles.actionButton} title="Delete view">
+            <button onClick={onDelete} className="btn-icon" title="Delete view">
               🗑️
             </button>
           )}

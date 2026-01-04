@@ -134,36 +134,4 @@
   gap: 0.75rem;
 }
 
-.primaryButton,
-.secondaryButton {
-  padding: 0.5rem 1rem;
-  border-radius: 0.375rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.primaryButton {
-  background-color: #3b82f6;
-  color: white;
-  border: none;
-}
-
-.primaryButton:hover:not(:disabled) {
-  background-color: #2563eb;
-}
-
-.primaryButton:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.secondaryButton {
-  background-color: white;
-  color: #374151;
-  border: 1px solid #d1d5db;
-}
-
-.secondaryButton:hover {
-  background-color: #f9fafb;
-}
+/* Button styles now use global classes: .btn-primary, .btn-secondary */

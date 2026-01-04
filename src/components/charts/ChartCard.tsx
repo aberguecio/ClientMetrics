@@ -59,12 +59,12 @@ export default function ChartCard({ chart, activeFilterIds, chartFilterId, onEdi
         </div>
         <div className={styles.actions}>
           {onEdit && (
-            <button onClick={onEdit} className={styles.actionButton} title="Edit chart">
+            <button onClick={onEdit} className="btn-icon" title="Edit chart">
               ✏️
             </button>
           )}
           {onDelete && (
-            <button onClick={onDelete} className={styles.actionButton} title="Delete chart">
+            <button onClick={onDelete} className="btn-icon" title="Delete chart">
               🗑️
             </button>
           )}

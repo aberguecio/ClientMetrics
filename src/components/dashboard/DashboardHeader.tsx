@@ -34,33 +34,22 @@ export default function DashboardHeader({
   onFilterToggle,
   hasActiveView,
 }: DashboardHeaderProps) {
+  const activeView = views.find(v => v.id === activeViewId);
+
   return (
     <div className={styles.dashboardHeader}>
-      <h1>Dashboard de Métricas</h1>
-      <div className={styles.controls}>
+      {/* Primera fila: Controles principales */}
+      <div className={styles.topRow}>
         <ViewSelector
           views={views}
           activeViewId={activeViewId}
           onChange={onViewChange}
           inPlaceMode={true}
         />
-        <button onClick={onCreateChart} className={styles.createBtn} disabled={!hasActiveView}>
-          + Crear Gráfico
-        </button>
-        <button onClick={onCreateView} className={styles.createBtn}>
+        <button onClick={onCreateView} className="btn-success">
           + Crear Vista
         </button>
-        {hasActiveView && (
-          <>
-            <button onClick={onEditView} className={styles.manageBtn}>
-              ✏️ Editar Vista
-            </button>
-            <button onClick={onDeleteView} className={styles.deleteBtn}>
-              🗑️ Eliminar Vista
-            </button>
-          </>
-        )}
-        <button onClick={onManageFilters} className={styles.manageBtn}>
+        <button onClick={onManageFilters} className="btn-neutral">
           Filtros
         </button>
         <ViewFilterDropdown
@@ -69,6 +58,24 @@ export default function DashboardHeader({
           onFilterToggle={onFilterToggle}
         />
       </div>
+
+      {/* Segunda fila: Nombre de vista + acciones */}
+      {hasActiveView && activeView && (
+        <div className={styles.bottomRow}>
+          <div className={styles.viewInfo}>
+            <h1 className={styles.viewName}>{activeView.name}</h1>
+            <button onClick={onEditView} className="btn-icon" title="Editar Vista">
+              ✏️
+            </button>
+            <button onClick={onDeleteView} className="btn-icon" title="Eliminar Vista">
+              🗑️
+            </button>
+          </div>
+          <button onClick={onCreateChart} className="btn-featured">
+            + Crear Gráfico
+          </button>
+        </div>
+      )}
     </div>
   );
 }

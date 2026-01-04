@@ -33,3 +33,44 @@ export async function categorizeMeetingWithRetry(
 
   throw lastError || new Error('Failed to categorize meeting after retries');
 }
+
+
+async function categorizeMeeting(params: CategorizationParams): Promise<Analysis> {
+  try {
+    const prompt = buildCategorizationPrompt({
+      clientName: params.clientName,
+      salesRep: params.salesRep,
+      meetingDate: params.meetingDate,
+      closed: params.closed,
+      transcript: params.transcript,
+    });
+    const response = await openai.chat.completions.create({
+      model: MODELS.LLM,
+      messages: [
+        {
+          role: 'system',
+          content: 'You are an expert sales analyst. Respond only with valid JSON.',
+        },
+        {
+          role: 'user',
+          content: prompt,
+        },
+      ],
+      response_format: { type: 'json_object' },
+      temperature: 1, // Lower temperature for more consistent results
+    });
+    const content = response.choices[0]?.message?.content;
+    if (!content) {
+      throw new Error('No response from OpenAI');
+    }
+    // Parse and validate the JSON response
+    const json = JSON.parse(content);
+    const validated = AnalysisSchema.parse(json);
+    return validated;
+  } catch (error) {
+    if (error instanceof Error) {
+      throw new Error(`Failed to categorize meeting: ${error.message}`);
+    }
+    throw new Error('Failed to categorize meeting: Unknown error');
+  }
+}

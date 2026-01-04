@@ -1,28 +1,11 @@
 import MeetingsList from '@/components/meetings/MeetingsList';
-import MeetingFilters from '@/components/meetings/MeetingFilters';
 import styles from './meetings.module.css';
 
-interface SearchParams {
-  salesRep?: string;
-  closed?: string;
-  page?: string;
-}
-
-export default async function MeetingsPage({
-  searchParams,
-}: {
-  searchParams: SearchParams;
-}) {
-  // Construir URL para la API
-  const params = new URLSearchParams();
-  if (searchParams.salesRep) params.set('salesRep', searchParams.salesRep);
-  if (searchParams.closed) params.set('closed', searchParams.closed);
-  if (searchParams.page) params.set('page', searchParams.page);
-
-  // Fetch meetings data
+export default async function MeetingsPage() {
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
-  const response = await fetch(`${baseUrl}/api/meetings?${params.toString()}`, {
-    cache: 'no-store', // Siempre obtener datos frescos
+
+  const response = await fetch(`${baseUrl}/api/meetings`, {
+    cache: 'no-store',
   });
 
   let data = { meetings: [], page: 1, limit: 60, total: 0, totalPages: 0 };
@@ -39,8 +22,6 @@ export default async function MeetingsPage({
           Total de reuniones: <strong>{data.total}</strong>
         </p>
       </div>
-
-      <MeetingFilters />
 
       <MeetingsList
         meetings={data.meetings}

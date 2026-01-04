@@ -505,14 +505,14 @@ export default function ChartBuilderModal({
 
           <div className={styles.buttons}>
             {step > 1 && (
-              <button onClick={() => setStep(step - 1)} className={styles.secondaryButton}>
+              <button onClick={() => setStep(step - 1)} className="btn-secondary">
                 Previous
               </button>
             )}
             {step < 3 && (
               <button
                 onClick={() => setStep(step + 1)}
-                className={styles.primaryButton}
+                className="btn-primary"
                 disabled={step === 2 && validationResult?.valid === false}
                 style={{
                   opacity: step === 2 && validationResult?.valid === false ? 0.5 : 1,
@@ -523,7 +523,7 @@ export default function ChartBuilderModal({
               </button>
             )}
             {step === 3 && (
-              <button onClick={handleSave} disabled={saving} className={styles.primaryButton}>
+              <button onClick={handleSave} disabled={saving} className="btn-primary">
                 {saving ? 'Saving...' : editChart ? 'Update Chart' : 'Create Chart'}
               </button>
             )}
