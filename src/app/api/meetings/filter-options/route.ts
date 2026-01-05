@@ -1,59 +1,63 @@
-import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { salesMeetings, llmAnalysis } from '@/lib/db/schema';
 import { isNotNull, sql } from 'drizzle-orm';
+import { successResponse, errorResponse } from '@/lib/api';
 
+/**
+ * GET /api/meetings/filter-options
+ * Get distinct values for filter dropdowns from meetings and analysis data
+ *
+ * @returns Object with arrays of unique values for: salesReps, sectors, companySizes, discoveryChannels
+ * @throws {500} On database error
+ */
 export async function GET() {
   try {
-    // Sales reps únicos
+    // Get unique sales reps
     const salesReps = await db
       .selectDistinct({ value: salesMeetings.salesRep })
       .from(salesMeetings)
       .where(isNotNull(salesMeetings.salesRep))
       .orderBy(salesMeetings.salesRep);
 
-    // Sectores únicos del análisis JSON
+    // Get unique sectors from LLM analysis JSON
     const sectorsRaw = await db.select({
       value: sql<string>`DISTINCT ${llmAnalysis.analysisJson}->>'sector'`,
     }).from(llmAnalysis).where(isNotNull(llmAnalysis.analysisJson));
 
-    // Company sizes únicos
+    // Get unique company sizes from LLM analysis JSON
     const companySizesRaw = await db.select({
       value: sql<string>`DISTINCT ${llmAnalysis.analysisJson}->>'company_size'`,
     }).from(llmAnalysis).where(isNotNull(llmAnalysis.analysisJson));
 
-    // Discovery channels únicos
+    // Get unique discovery channels from LLM analysis JSON
     const discoveryChannelsRaw = await db.select({
       value: sql<string>`DISTINCT ${llmAnalysis.analysisJson}->>'discovery_channel'`,
     }).from(llmAnalysis).where(isNotNull(llmAnalysis.analysisJson));
 
-    // Filtrar nulls y vacíos
+    // Filter out nulls and empty strings, then sort
     const sectors = sectorsRaw
-      .map(r => r.value)
-      .filter(v => v && v.trim())
+      .map((r: { value: string }) => r.value)
+      .filter((v: string) => v && v.trim())
       .sort();
 
     const companySizes = companySizesRaw
-      .map(r => r.value)
-      .filter(v => v && v.trim())
+      .map((r: { value: string }) => r.value)
+      .filter((v: string) => v && v.trim())
       .sort();
 
     const discoveryChannels = discoveryChannelsRaw
-      .map(r => r.value)
-      .filter(v => v && v.trim())
+      .map((r: { value: string }) => r.value)
+      .filter((v: string) => v && v.trim())
       .sort();
 
-    return NextResponse.json({
-      salesReps: salesReps.map(r => r.value).filter(v => v),
+    return successResponse({
+      salesReps: salesReps.map((r: { value: string | null }) => r.value).filter((v: string | null) => v),
       sectors,
       companySizes,
       discoveryChannels,
     });
   } catch (error) {
-    console.error('Error fetching filter options:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch filter options' },
-      { status: 500 }
-    );
+    console.error('[API /meetings/filter-options GET] Error:', error);
+    return errorResponse('Failed to fetch filter options', error instanceof Error ? error.message : undefined);
   }
 }

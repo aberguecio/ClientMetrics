@@ -44,8 +44,9 @@ export default function ViewSelector({
     try {
       const response = await fetch('/api/views');
       if (!response.ok) throw new Error('Failed to fetch views');
-      const data = await response.json();
-      setLocalViews(data);
+      const result = await response.json();
+      // Unwrap the data from the standardized API response
+      setLocalViews(result.data || result);
     } catch (error) {
       console.error('Error fetching views:', error);
     } finally {

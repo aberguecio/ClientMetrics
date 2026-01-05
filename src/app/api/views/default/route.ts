@@ -1,20 +1,24 @@
-import { NextResponse } from 'next/server';
 import { getDefaultView } from '@/lib/charts/queries';
+import { successResponse, errorResponse } from '@/lib/api';
 
+/**
+ * GET /api/views/default
+ * Get the default view with all its details
+ *
+ * @returns Default view with charts and filters, or null if no default view exists
+ * @throws {500} On database error
+ */
 export async function GET() {
   try {
     const defaultView = await getDefaultView();
 
     if (!defaultView) {
-      return NextResponse.json(null);
+      return successResponse(null);
     }
 
-    return NextResponse.json(defaultView);
+    return successResponse(defaultView);
   } catch (error) {
-    console.error('Error fetching default view:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch default view' },
-      { status: 500 }
-    );
+    console.error('[API /views/default GET] Error:', error);
+    return errorResponse('Failed to fetch default view', error instanceof Error ? error.message : undefined);
   }
 }

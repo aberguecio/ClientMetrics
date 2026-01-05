@@ -38,8 +38,9 @@ export default function StatsRow({ view }: StatsRowProps) {
         });
 
         if (response.ok) {
-          const data = await response.json();
-          setStats(data);
+          const result = await response.json();
+          // Unwrap the data from the standardized API response
+          setStats(result.data || result);
         } else {
           console.error('Failed to fetch analytics');
           setStats(null);

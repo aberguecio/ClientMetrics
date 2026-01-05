@@ -1,8 +1,15 @@
-import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { processingJobs } from '@/lib/db/schema';
-import { eq, and } from 'drizzle-orm';
+import { eq } from 'drizzle-orm';
+import { successResponse, errorResponse } from '@/lib/api';
 
+/**
+ * POST /api/jobs/retry-failed
+ * Reset all failed jobs to pending status and trigger processing
+ *
+ * @returns Success status with count of jobs requeued
+ * @throws {500} On database error
+ */
 export async function POST() {
     try {
         // Find all failed jobs
@@ -12,9 +19,9 @@ export async function POST() {
             .where(eq(processingJobs.status, 'failed'));
 
         if (failedJobs.length === 0) {
-            return NextResponse.json({
+            return successResponse({
                 success: true,
-                message: 'No hay trabajos fallidos para reintentar',
+                message: 'No failed jobs to retry',
                 count: 0,
             });
         }
@@ -34,19 +41,13 @@ export async function POST() {
         const { triggerJobProcessing } = await import('@/lib/jobs/auto-processor');
         triggerJobProcessing();
 
-        return NextResponse.json({
+        return successResponse({
             success: true,
-            message: `Se han reencolado ${failedJobs.length} trabajos fallidos`,
+            message: `${failedJobs.length} failed jobs requeued`,
             count: failedJobs.length,
         });
     } catch (error) {
-        console.error('Error retrying failed jobs:', error);
-        return NextResponse.json(
-            {
-                success: false,
-                error: 'Error al reintentar trabajos fallidos',
-            },
-            { status: 500 }
-        );
+        console.error('[API /jobs/retry-failed POST] Error:', error);
+        return errorResponse('Failed to retry failed jobs', error instanceof Error ? error.message : undefined);
     }
 }

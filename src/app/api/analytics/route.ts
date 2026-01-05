@@ -1,7 +1,18 @@
-import { NextResponse } from 'next/server';
 import { getMeetingsWithFilters, getAllMeetingsWithAnalysis, calculateAnalytics } from '@/lib/db/queries';
 import type { MergedFilter } from '@/types/charts';
+import { successResponse, errorResponse } from '@/lib/api';
 
+/**
+ * POST /api/analytics
+ * Calculate analytics for meetings with optional filters
+ *
+ * NOTE: This should ideally be a GET request since it's a read operation,
+ * but uses POST to accept filter object in body
+ *
+ * @param request.body.filter - Optional filter object to apply to meetings
+ * @returns Analytics object with calculated metrics
+ * @throws {500} On database or calculation error
+ */
 export async function POST(request: Request) {
   try {
     const body = await request.json();
@@ -15,12 +26,9 @@ export async function POST(request: Request) {
     // Calculate analytics from meetings
     const analytics = calculateAnalytics(meetings);
 
-    return NextResponse.json(analytics);
+    return successResponse(analytics);
   } catch (error) {
-    console.error('Error calculating analytics:', error);
-    return NextResponse.json(
-      { error: 'Failed to calculate analytics' },
-      { status: 500 }
-    );
+    console.error('[API /analytics POST] Error:', error);
+    return errorResponse('Failed to calculate analytics', error instanceof Error ? error.message : undefined);
   }
 }

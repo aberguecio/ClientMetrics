@@ -1,32 +1,52 @@
-import { NextResponse } from 'next/server';
 import { getAllViews, createView, addChartToView, addFilterToView } from '@/lib/charts/queries';
 import { mapViewToApi } from '@/lib/charts/mappers';
+import {
+  successResponse,
+  errorResponse,
+  validationErrorResponse,
+  validateRequiredFields,
+} from '@/lib/api';
 
-// GET /api/views - List all views
+/**
+ * GET /api/views
+ * List all saved views
+ *
+ * @returns Array of views
+ * @throws {500} On database error
+ */
 export async function GET() {
   try {
     const views = await getAllViews();
     const mappedViews = views.map(mapViewToApi);
-    return NextResponse.json(mappedViews);
+    return successResponse(mappedViews);
   } catch (error) {
-    console.error('Error fetching views:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch views' },
-      { status: 500 }
-    );
+    console.error('[API /views GET] Error:', error);
+    return errorResponse('Failed to fetch views', error instanceof Error ? error.message : undefined);
   }
 }
 
-// POST /api/views - Create a new view
+/**
+ * POST /api/views
+ * Create a new view
+ *
+ * @param request.body.name - View name (required)
+ * @param request.body.objective - View objective/description (optional)
+ * @param request.body.is_default - Set as default view (optional)
+ * @param request.body.chart_ids - Array of chart IDs to add (optional)
+ * @param request.body.filter_ids - Array of filter IDs to add (optional)
+ * @returns Created view
+ * @throws {400} If required fields are missing
+ * @throws {500} On database error
+ */
 export async function POST(request: Request) {
   try {
     const body = await request.json();
 
     // Validate required fields
-    if (!body.name) {
-      return NextResponse.json(
-        { error: 'Missing required field: name' },
-        { status: 400 }
+    const validation = validateRequiredFields(body, ['name']);
+    if (!validation.valid) {
+      return validationErrorResponse(
+        `Missing required fields: ${validation.missing!.join(', ')}`
       );
     }
 
@@ -60,12 +80,9 @@ export async function POST(request: Request) {
       }
     }
 
-    return NextResponse.json(mapViewToApi(newView), { status: 201 });
+    return successResponse(mapViewToApi(newView), 201);
   } catch (error) {
-    console.error('Error creating view:', error);
-    return NextResponse.json(
-      { error: 'Failed to create view' },
-      { status: 500 }
-    );
+    console.error('[API /views POST] Error:', error);
+    return errorResponse('Failed to create view', error instanceof Error ? error.message : undefined);
   }
 }

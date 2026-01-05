@@ -1,8 +1,18 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import { db } from '@/lib/db';
 import { salesMeetings, llmAnalysis } from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
+import { successResponse, errorResponse, notFoundResponse } from '@/lib/api';
 
+/**
+ * GET /api/meetings/[id]
+ * Get details of a specific meeting
+ *
+ * @param params.id - Meeting ID
+ * @returns Meeting with LLM analysis details
+ * @throws {404} If meeting not found
+ * @throws {500} On database error
+ */
 export async function GET(
   request: NextRequest,
   { params }: { params: { id: string } }
@@ -34,25 +44,12 @@ export async function GET(
       .limit(1);
 
     if (!result || result.length === 0) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: 'Reunión no encontrada',
-        },
-        { status: 404 }
-      );
+      return notFoundResponse('Meeting');
     }
 
-    return NextResponse.json(result[0]);
+    return successResponse(result[0]);
   } catch (error) {
-    console.error('Error fetching meeting:', error);
-    return NextResponse.json(
-      {
-        success: false,
-        error: 'Error al obtener la reunión',
-        details: error instanceof Error ? error.message : 'Error desconocido',
-      },
-      { status: 500 }
-    );
+    console.error('[API /meetings/[id] GET] Error:', error);
+    return errorResponse('Failed to fetch meeting', error instanceof Error ? error.message : undefined);
   }
 }

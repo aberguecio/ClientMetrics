@@ -42,7 +42,9 @@ export default function ChartCard({ chart, activeFilterIds, chartFilterId, onEdi
       }
 
       const result = await response.json();
-      setData(result.data);
+      // Unwrap the data from the standardized API response
+      const apiData = result.data || result;
+      setData(apiData.data);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unknown error');
     } finally {

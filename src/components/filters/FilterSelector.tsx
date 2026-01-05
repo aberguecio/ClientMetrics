@@ -22,8 +22,9 @@ export default function FilterSelector({ selectedFilterIds, onSelect, onDeselect
     try {
       const response = await fetch('/api/filters');
       if (!response.ok) throw new Error('Failed to fetch filters');
-      const data = await response.json();
-      setFilters(data);
+      const result = await response.json();
+      // Unwrap the data from the standardized API response
+      setFilters(result.data || result);
     } catch (error) {
       console.error('Error fetching filters:', error);
     } finally {

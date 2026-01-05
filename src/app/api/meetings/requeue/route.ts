@@ -1,54 +1,42 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import { db } from '@/lib/db';
 import { llmAnalysis } from '@/lib/db/schema';
 import { inArray } from 'drizzle-orm';
 import { createJobs } from '@/lib/jobs/processor';
+import { successResponse, errorResponse, validationErrorResponse, validateIdArray } from '@/lib/api';
 
+/**
+ * POST /api/meetings/requeue
+ * Requeue meetings for reprocessing by deleting existing analysis and creating new jobs
+ *
+ * @param request.body.ids - Array of meeting IDs to requeue (max 100)
+ * @returns Success status with count of jobs created
+ * @throws {400} If ids invalid or exceeds limit
+ * @throws {500} On database error
+ */
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     const { ids } = body;
 
-    if (!ids || !Array.isArray(ids) || ids.length === 0) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: 'Se requiere un array de IDs',
-        },
-        { status: 400 }
-      );
+    // Validate IDs array
+    const validation = validateIdArray(ids, { min: 1, max: 100 });
+    if (!validation.valid) {
+      return validationErrorResponse(validation.error!);
     }
 
-    // Validate max 100 IDs
-    if (ids.length > 100) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: 'Máximo 100 reuniones por operación',
-        },
-        { status: 400 }
-      );
-    }
-
-    // Delete existing analysis
+    // Delete existing analysis to trigger reprocessing
     await db.delete(llmAnalysis).where(inArray(llmAnalysis.meetingId, ids));
 
     // Create new jobs for AI processing
     await createJobs(ids);
 
-    return NextResponse.json({
+    return successResponse({
       success: true,
       jobsCreated: ids.length,
     });
   } catch (error) {
-    console.error('Error requeuing meetings:', error);
-    return NextResponse.json(
-      {
-        success: false,
-        error: 'Error al reencolar las reuniones',
-        details: error instanceof Error ? error.message : 'Error desconocido',
-      },
-      { status: 500 }
-    );
+    console.error('[API /meetings/requeue POST] Error:', error);
+    return errorResponse('Failed to requeue meetings', error instanceof Error ? error.message : undefined);
   }
 }

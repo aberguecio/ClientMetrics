@@ -1,31 +1,43 @@
-import { NextResponse } from 'next/server';
 import { getChartById, getFilterById } from '@/lib/charts/queries';
 import { calculateChartData } from '@/lib/charts/calculator';
 import type { SavedFilter } from '@/types/charts';
+import { successResponse, errorResponse, validationErrorResponse, validateResourceExists, validateRequiredFields } from '@/lib/api';
 
-// POST /api/charts/data - Calculate chart data with filters
+/**
+ * POST /api/charts/data
+ * Calculate chart data with optional view and chart filters
+ *
+ * @param request.body.chart_id - Chart ID (required)
+ * @param request.body.view_filter_ids - Array of view-level filter IDs (optional)
+ * @param request.body.chart_filter_id - Chart-specific filter ID (optional)
+ * @returns Calculated chart data points with metadata
+ * @throws {400} If chart_id missing
+ * @throws {404} If chart not found
+ * @throws {500} On calculation error
+ */
 export async function POST(request: Request) {
   try {
     const body = await request.json();
     console.log('🌐 [API /charts/data] Request:', JSON.stringify(body, null, 2));
 
     // Validate required fields
-    if (!body.chart_id) {
-      return NextResponse.json(
-        { error: 'Missing required field: chart_id' },
-        { status: 400 }
-      );
+    const fieldsValidation = validateRequiredFields(body, ['chart_id']);
+    if (!fieldsValidation.valid) {
+      return validationErrorResponse(`Missing required fields: ${fieldsValidation.missing!.join(', ')}`);
     }
 
-    // Get the chart
-    const chart = await getChartById(body.chart_id);
-    if (!chart) {
+    // Validate chart exists
+    const chartValidation = await validateResourceExists(
+      () => getChartById(body.chart_id),
+      'Chart'
+    );
+
+    if (!chartValidation.valid) {
       console.error('❌ [API /charts/data] Chart not found:', body.chart_id);
-      return NextResponse.json(
-        { error: 'Chart not found' },
-        { status: 404 }
-      );
+      return chartValidation.error;
     }
+
+    const chart = chartValidation.resource!;
     console.log('✓ [API /charts/data] Chart found:', chart.name);
 
     // Get view filters
@@ -81,7 +93,7 @@ export async function POST(request: Request) {
 
     console.log('✅ [API /charts/data] Success, returning', data.length, 'data points');
 
-    return NextResponse.json({
+    return successResponse({
       data,
       metadata: {
         total: data.reduce((sum, item) => sum + item.value, 0),
@@ -93,9 +105,6 @@ export async function POST(request: Request) {
     });
   } catch (error) {
     console.error('❌ [API /charts/data] Error:', error);
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Failed to calculate chart data' },
-      { status: 500 }
-    );
+    return errorResponse('Failed to calculate chart data', error instanceof Error ? error.message : undefined);
   }
 }

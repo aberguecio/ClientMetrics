@@ -26,8 +26,9 @@ export default function AddChartToView({ viewId, onChartAdded }: AddChartToViewP
       setLoading(true);
       const response = await fetch('/api/charts');
       if (response.ok) {
-        const data = await response.json();
-        setCharts(data);
+        const result = await response.json();
+        // Unwrap the data from the standardized API response
+        setCharts(result.data || result);
       }
     } catch (error) {
       console.error('Error fetching charts:', error);

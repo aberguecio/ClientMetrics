@@ -79,7 +79,11 @@ export default function ChartBuilderModal({
       // Fetch filters
       fetch('/api/filters')
         .then((r) => r.json())
-        .then((data) => setFilters(data))
+        .then((result) => {
+          // Unwrap the data from the standardized API response
+          const data = result.data || result;
+          setFilters(data);
+        })
         .catch((err) => console.error('Error fetching filters:', err));
     }
   }, [isOpen, editChart]);
@@ -173,14 +177,18 @@ export default function ChartBuilderModal({
         throw new Error('Failed to save chart');
       }
 
-      const savedChart = await response.json();
+      const result = await response.json();
+      // Unwrap the data from the standardized API response
+      const savedChart = result.data || result;
 
       // Auto-add to view if requested
       if (autoAddToView && currentViewId && !editChart) {
         try {
           const viewResponse = await fetch(`/api/views/${currentViewId}`);
           if (viewResponse.ok) {
-            const viewData = await viewResponse.json();
+            const viewResult = await viewResponse.json();
+            // Unwrap the data from the standardized API response
+            const viewData = viewResult.data || viewResult;
             const maxPosition = viewData.charts?.length > 0
               ? Math.max(...viewData.charts.map((c: any) => c.position || 0))
               : -1;

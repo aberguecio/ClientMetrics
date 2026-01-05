@@ -15,7 +15,9 @@ export default async function MeetingDetailPage({ params }: { params: { id: stri
     );
   }
 
-  const meeting: MeetingDetail = await response.json();
+  const result = await response.json();
+  // Unwrap the data from the standardized API response
+  const meeting: MeetingDetail = result.data || result;
 
   return (
     <div className="container">

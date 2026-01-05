@@ -18,7 +18,9 @@ export default function JobProcessor() {
   const fetchStats = async () => {
     try {
       const response = await fetch('/api/process-jobs');
-      const data = await response.json();
+      const result = await response.json();
+      // Unwrap the data from the standardized API response
+      const data = result.data || result;
       if (data.success) {
         setStats(data.stats);
       }
@@ -127,12 +129,14 @@ export default function JobProcessor() {
               try {
                 setLoading(true);
                 const res = await fetch('/api/jobs/retry-failed', { method: 'POST' });
-                const data = await res.json();
+                const result = await res.json();
+                // Unwrap the data from the standardized API response
+                const data = result.data || result;
                 if (data.success) {
                   alert(data.message);
                   fetchStats();
                 } else {
-                  alert('Error: ' + data.error);
+                  alert('Error: ' + (result.error || data.error));
                 }
               } catch (e) {
                 alert('Error de conexión');

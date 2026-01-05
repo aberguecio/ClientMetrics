@@ -1,8 +1,22 @@
-import { NextResponse } from 'next/server';
 import { getViewWithDetails, getViewById, updateView, deleteView } from '@/lib/charts/queries';
 import { mapViewWithDetailsToApi, mapViewToApi } from '@/lib/charts/mappers';
+import {
+  successResponse,
+  errorResponse,
+  validateResourceExists,
+  transformRequestBody,
+  VIEW_FIELD_MAPPING,
+} from '@/lib/api';
 
-// GET /api/views/[id] - Get a view with all its charts and filters
+/**
+ * GET /api/views/[id]
+ * Get a view with all its charts and filters
+ *
+ * @param params.id - View ID
+ * @returns View with full details (charts and filters)
+ * @throws {404} If view not found
+ * @throws {500} On database error
+ */
 export async function GET(
   request: Request,
   { params }: { params: { id: string } }
@@ -11,80 +25,85 @@ export async function GET(
     const viewWithDetails = await getViewWithDetails(params.id);
 
     if (!viewWithDetails) {
-      return NextResponse.json(
-        { error: 'View not found' },
-        { status: 404 }
-      );
+      return errorResponse('View not found', undefined, 404);
     }
 
-    return NextResponse.json(mapViewWithDetailsToApi(viewWithDetails));
+    return successResponse(mapViewWithDetailsToApi(viewWithDetails));
   } catch (error) {
-    console.error('Error fetching view:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch view' },
-      { status: 500 }
-    );
+    console.error('[API /views/[id] GET] Error:', error);
+    return errorResponse('Failed to fetch view', error instanceof Error ? error.message : undefined);
   }
 }
 
-// PUT /api/views/[id] - Update a view
+/**
+ * PUT /api/views/[id]
+ * Update an existing view
+ *
+ * @param params.id - View ID
+ * @param request.body - Fields to update
+ * @returns Updated view
+ * @throws {404} If view not found
+ * @throws {500} On database error
+ */
 export async function PUT(
   request: Request,
   { params }: { params: { id: string } }
 ) {
   try {
-    const body = await request.json();
-
     // Validate view exists
-    const existing = await getViewById(params.id);
-    if (!existing) {
-      return NextResponse.json(
-        { error: 'View not found' },
-        { status: 404 }
-      );
+    const validation = await validateResourceExists(
+      () => getViewById(params.id),
+      'View'
+    );
+
+    if (!validation.valid) {
+      return validation.error;
     }
 
-    const updateData: any = {};
-    if (body.name !== undefined) updateData.name = body.name;
-    if (body.objective !== undefined) updateData.objective = body.objective;
-    if (body.is_default !== undefined) updateData.isDefault = body.is_default;
+    const body = await request.json();
+
+    // Transform request body (snake_case to camelCase)
+    const updateData = transformRequestBody(body, VIEW_FIELD_MAPPING);
 
     const updatedView = await updateView(params.id, updateData);
 
-    return NextResponse.json(mapViewToApi(updatedView));
+    return successResponse(mapViewToApi(updatedView));
   } catch (error) {
-    console.error('Error updating view:', error);
-    return NextResponse.json(
-      { error: 'Failed to update view' },
-      { status: 500 }
-    );
+    console.error('[API /views/[id] PUT] Error:', error);
+    return errorResponse('Failed to update view', error instanceof Error ? error.message : undefined);
   }
 }
 
-// DELETE /api/views/[id] - Delete a view
+/**
+ * DELETE /api/views/[id]
+ * Delete a view (cascade deletes associated view_charts and view_filters)
+ *
+ * @param params.id - View ID
+ * @returns Success status
+ * @throws {404} If view not found
+ * @throws {500} On database error
+ */
 export async function DELETE(
   request: Request,
   { params }: { params: { id: string } }
 ) {
   try {
     // Validate view exists
-    const existing = await getViewById(params.id);
-    if (!existing) {
-      return NextResponse.json(
-        { error: 'View not found' },
-        { status: 404 }
-      );
+    const validation = await validateResourceExists(
+      () => getViewById(params.id),
+      'View'
+    );
+
+    if (!validation.valid) {
+      return validation.error;
     }
 
     // Delete the view (cascade will handle view_charts and view_filters)
     await deleteView(params.id);
 
-    return NextResponse.json({ success: true });
+    return successResponse({ success: true });
   } catch (error) {
-    console.error('Error deleting view:', error);
-    return NextResponse.json(
-      { error: 'Failed to delete view' },
-      { status: 500 }
-    );
+    console.error('[API /views/[id] DELETE] Error:', error);
+    return errorResponse('Failed to delete view', error instanceof Error ? error.message : undefined);
   }
 }

@@ -11,7 +11,9 @@ export default async function MeetingsPage() {
   let data = { meetings: [], page: 1, limit: 60, total: 0, totalPages: 0 };
 
   if (response.ok) {
-    data = await response.json();
+    const result = await response.json();
+    // Unwrap the data from the standardized API response
+    data = result.data || result;
   }
 
   return (

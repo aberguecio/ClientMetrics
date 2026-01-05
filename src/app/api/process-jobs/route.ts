@@ -1,29 +1,26 @@
-import { NextResponse } from 'next/server';
 import { getJobStats } from '@/lib/jobs/processor';
+import { successResponse, errorResponse } from '@/lib/api';
 
 /**
- * GET endpoint to retrieve job processing statistics
- * This endpoint only returns stats - actual job processing is handled
+ * GET /api/process-jobs
+ * Retrieve job processing statistics
+ *
+ * NOTE: This endpoint only returns stats - actual job processing is handled
  * by the auto-processor running in the background
+ *
+ * @returns Job statistics (pending, processing, completed, failed counts)
+ * @throws {500} On database error
  */
 export async function GET() {
   try {
     const stats = await getJobStats();
 
-    return NextResponse.json({
+    return successResponse({
       success: true,
       stats,
     });
   } catch (error) {
-    console.error('Error getting job stats:', error);
-
-    return NextResponse.json(
-      {
-        success: false,
-        error: 'Error al obtener estadísticas',
-        details: error instanceof Error ? error.message : 'Error desconocido',
-      },
-      { status: 500 }
-    );
+    console.error('[API /process-jobs GET] Error:', error);
+    return errorResponse('Failed to get job stats', error instanceof Error ? error.message : undefined);
   }
 }

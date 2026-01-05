@@ -35,14 +35,16 @@ export default function UploadForm() {
         body: formData,
       });
 
-      const data = await response.json();
+      const result = await response.json();
 
       if (!response.ok) {
-        setError(data.error || 'Error al subir el archivo');
-        if (data.validationErrors) {
-          console.error('Errores de validación:', data.validationErrors);
+        setError(result.error || 'Error al subir el archivo');
+        if (result.details) {
+          console.error('Detalles del error:', result.details);
         }
       } else {
+        // Unwrap the data from the standardized API response
+        const data = result.data || result;
         setResult(data);
         setFile(null);
         // Reset file input

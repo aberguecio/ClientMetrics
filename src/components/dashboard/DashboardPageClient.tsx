@@ -69,7 +69,9 @@ export default function DashboardPageClient() {
     try {
       const response = await fetch('/api/views/default');
       if (response.ok) {
-        const defaultView = await response.json();
+        const result = await response.json();
+        // Unwrap the data from the standardized API response
+        const defaultView = result.data || result;
         if (defaultView?.id) {
           setActiveViewId(defaultView.id);
         }
@@ -83,8 +85,9 @@ export default function DashboardPageClient() {
     try {
       const response = await fetch('/api/views');
       if (response.ok) {
-        const data = await response.json();
-        setViews(data);
+        const result = await response.json();
+        // Unwrap the data from the standardized API response
+        setViews(result.data || result);
       }
     } catch (error) {
       console.error('Error fetching views:', error);
@@ -96,8 +99,9 @@ export default function DashboardPageClient() {
       setLoading(true);
       const response = await fetch(`/api/views/${viewId}`);
       if (response.ok) {
-        const data = await response.json();
-        setView(data);
+        const result = await response.json();
+        // Unwrap the data from the standardized API response
+        setView(result.data || result);
       }
     } catch (error) {
       console.error('Error fetching view details:', error);
@@ -110,8 +114,9 @@ export default function DashboardPageClient() {
     try {
       const response = await fetch('/api/filters');
       if (response.ok) {
-        const data = await response.json();
-        setAllFilters(data);
+        const result = await response.json();
+        // Unwrap the data from the standardized API response
+        setAllFilters(result.data || result);
       }
     } catch (error) {
       console.error('Error fetching filters:', error);

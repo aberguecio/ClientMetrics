@@ -1,121 +1,127 @@
-import { NextResponse } from 'next/server';
 import { getChartById, updateChart, deleteChart } from '@/lib/charts/queries';
 import { mapChartToApi } from '@/lib/charts/mappers';
+import {
+  successResponse,
+  errorResponse,
+  validateResourceExists,
+  validateEnumValue,
+  transformRequestBody,
+  CHART_FIELD_MAPPING,
+  VALID_CHART_TYPES,
+  VALID_AGGREGATIONS,
+} from '@/lib/api';
 
-// GET /api/charts/[id] - Get a specific chart
+/**
+ * GET /api/charts/[id]
+ * Get a specific chart by ID
+ *
+ * @param params.id - Chart ID
+ * @returns Chart data
+ * @throws {404} If chart not found
+ * @throws {500} On database error
+ */
 export async function GET(
   request: Request,
   { params }: { params: { id: string } }
 ) {
   try {
-    const chart = await getChartById(params.id);
+    const validation = await validateResourceExists(
+      () => getChartById(params.id),
+      'Chart'
+    );
 
-    if (!chart) {
-      return NextResponse.json(
-        { error: 'Chart not found' },
-        { status: 404 }
-      );
+    if (!validation.valid) {
+      return validation.error;
     }
 
-    return NextResponse.json(mapChartToApi(chart));
+    return successResponse(mapChartToApi(validation.resource!));
   } catch (error) {
-    console.error('Error fetching chart:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch chart' },
-      { status: 500 }
-    );
+    console.error('[API /charts/[id] GET] Error:', error);
+    return errorResponse('Failed to fetch chart', error instanceof Error ? error.message : undefined);
   }
 }
 
-// PUT /api/charts/[id] - Update a chart
+/**
+ * PUT /api/charts/[id]
+ * Update an existing chart
+ *
+ * @param params.id - Chart ID
+ * @param request.body - Fields to update
+ * @returns Updated chart
+ * @throws {404} If chart not found
+ * @throws {400} If validation fails
+ * @throws {500} On database error
+ */
 export async function PUT(
   request: Request,
   { params }: { params: { id: string } }
 ) {
   try {
-    const body = await request.json();
-
     // Validate chart exists
-    const existing = await getChartById(params.id);
-    if (!existing) {
-      return NextResponse.json(
-        { error: 'Chart not found' },
-        { status: 404 }
-      );
+    const validation = await validateResourceExists(
+      () => getChartById(params.id),
+      'Chart'
+    );
+
+    if (!validation.valid) {
+      return validation.error;
     }
 
+    const body = await request.json();
+
     // Validate chart_type if provided
-    if (body.chart_type) {
-      const validChartTypes = ['pie', 'bar', 'line', 'area', 'wordcloud', 'vector_cluster'];
-      if (!validChartTypes.includes(body.chart_type)) {
-        return NextResponse.json(
-          { error: 'Invalid chart_type. Must be one of: pie, bar, line, area, wordcloud, vector_cluster' },
-          { status: 400 }
-        );
-      }
+    const chartTypeValidation = validateEnumValue(body.chart_type, VALID_CHART_TYPES, 'chart_type');
+    if (!chartTypeValidation.valid) {
+      return errorResponse(chartTypeValidation.error!, undefined, 400);
     }
 
     // Validate aggregation if provided
-    if (body.aggregation) {
-      const validAggregations = ['count', 'sum', 'avg', 'min', 'max'];
-      if (!validAggregations.includes(body.aggregation)) {
-        return NextResponse.json(
-          { error: 'Invalid aggregation. Must be one of: count, sum, avg, min, max' },
-          { status: 400 }
-        );
-      }
+    const aggregationValidation = validateEnumValue(body.aggregation, VALID_AGGREGATIONS, 'aggregation');
+    if (!aggregationValidation.valid) {
+      return errorResponse(aggregationValidation.error!, undefined, 400);
     }
 
-    const updateData: any = {};
-    if (body.name !== undefined) updateData.name = body.name;
-    if (body.description !== undefined) updateData.description = body.description;
-    if (body.chart_type !== undefined) updateData.chartType = body.chart_type;
-    if (body.x_axis !== undefined) updateData.xAxis = body.x_axis;
-    if (body.y_axis !== undefined) updateData.yAxis = body.y_axis;
-    if (body.group_by !== undefined) updateData.groupBy = body.group_by;
-    if (body.aggregation !== undefined) updateData.aggregation = body.aggregation;
-    if (body.time_group !== undefined) updateData.timeGroup = body.time_group;
-    if (body.colors !== undefined) updateData.colors = body.colors;
-    if (body.k_clusters !== undefined) updateData.kClusters = body.k_clusters;
-    if (body.label_field !== undefined) updateData.labelField = body.label_field;
-    if (body.text_mode !== undefined) updateData.textMode = body.text_mode;
-    if (body.cumulative !== undefined) updateData.cumulative = body.cumulative;
+    // Transform request body (snake_case to camelCase)
+    const updateData = transformRequestBody(body, CHART_FIELD_MAPPING);
 
     const updatedChart = await updateChart(params.id, updateData);
 
-    return NextResponse.json(mapChartToApi(updatedChart));
+    return successResponse(mapChartToApi(updatedChart));
   } catch (error) {
-    console.error('Error updating chart:', error);
-    return NextResponse.json(
-      { error: 'Failed to update chart' },
-      { status: 500 }
-    );
+    console.error('[API /charts/[id] PUT] Error:', error);
+    return errorResponse('Failed to update chart', error instanceof Error ? error.message : undefined);
   }
 }
 
-// DELETE /api/charts/[id] - Delete a chart
+/**
+ * DELETE /api/charts/[id]
+ * Delete a chart
+ *
+ * @param params.id - Chart ID
+ * @returns Success status
+ * @throws {404} If chart not found
+ * @throws {500} On database error
+ */
 export async function DELETE(
   request: Request,
   { params }: { params: { id: string } }
 ) {
   try {
     // Validate chart exists
-    const existing = await getChartById(params.id);
-    if (!existing) {
-      return NextResponse.json(
-        { error: 'Chart not found' },
-        { status: 404 }
-      );
+    const validation = await validateResourceExists(
+      () => getChartById(params.id),
+      'Chart'
+    );
+
+    if (!validation.valid) {
+      return validation.error;
     }
 
     await deleteChart(params.id);
 
-    return NextResponse.json({ success: true });
+    return successResponse({ success: true });
   } catch (error) {
-    console.error('Error deleting chart:', error);
-    return NextResponse.json(
-      { error: 'Failed to delete chart' },
-      { status: 500 }
-    );
+    console.error('[API /charts/[id] DELETE] Error:', error);
+    return errorResponse('Failed to delete chart', error instanceof Error ? error.message : undefined);
   }
 }

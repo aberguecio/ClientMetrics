@@ -1,10 +1,20 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import { db } from '@/lib/db';
 import { uploads, salesMeetings } from '@/lib/db/schema';
 import { parseCSV, isValidCSVFile, isValidFileSize } from '@/lib/csv/parser';
 import { validateCSVData } from '@/lib/csv/validator';
 import { createJobs } from '@/lib/jobs/processor';
+import { successResponse, errorResponse, validationErrorResponse } from '@/lib/api';
 
+/**
+ * POST /api/upload
+ * Upload and process CSV file with sales meeting transcripts
+ *
+ * @param request.formData.file - CSV file (max 10MB)
+ * @returns Success status with upload ID and job count
+ * @throws {400} If file missing, invalid format, or validation fails
+ * @throws {500} On database or processing error
+ */
 export async function POST(request: NextRequest) {
   try {
     // 1. Extract file from FormData
@@ -12,26 +22,17 @@ export async function POST(request: NextRequest) {
     const file = formData.get('file') as File | null;
 
     if (!file) {
-      return NextResponse.json(
-        { success: false, error: 'No se proporcionó ningún archivo' },
-        { status: 400 }
-      );
+      return validationErrorResponse('No file provided');
     }
 
     // 2. Validate file type
     if (!isValidCSVFile(file.name)) {
-      return NextResponse.json(
-        { success: false, error: 'El archivo debe ser un CSV' },
-        { status: 400 }
-      );
+      return validationErrorResponse('File must be a CSV');
     }
 
     // 3. Validate file size (max 10MB)
     if (!isValidFileSize(file.size)) {
-      return NextResponse.json(
-        { success: false, error: 'El archivo excede el tamaño máximo de 10MB' },
-        { status: 400 }
-      );
+      return validationErrorResponse('File exceeds maximum size of 10MB');
     }
 
     // 4. Convert to buffer and parse
@@ -42,26 +43,15 @@ export async function POST(request: NextRequest) {
     try {
       parsedData = parseCSV(buffer);
     } catch (error) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: error instanceof Error ? error.message : 'Error al parsear el CSV',
-        },
-        { status: 400 }
+      return validationErrorResponse(
+        error instanceof Error ? error.message : 'Failed to parse CSV'
       );
     }
 
     // 5. Validate data
     const validation = validateCSVData(parsedData.data);
     if (!validation.valid) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: 'Errores de validación en el CSV',
-          validationErrors: validation.errors,
-        },
-        { status: 400 }
-      );
+      return validationErrorResponse('CSV validation errors', validation.errors);
     }
 
     // 6. Insert into database (transaction)
@@ -108,22 +98,15 @@ export async function POST(request: NextRequest) {
     const { triggerJobProcessing } = await import('@/lib/jobs/auto-processor');
     triggerJobProcessing();
 
-    return NextResponse.json({
+    return successResponse({
       success: true,
       uploadId: result.upload.id,
       rowCount: parsedData.rowCount,
       jobsCreated: meetingIds.length,
-      message: `Se importaron ${parsedData.rowCount} reuniones exitosamente. El procesamiento de IA se iniciará automáticamente.`,
-    });
+      message: `Imported ${parsedData.rowCount} meetings successfully. AI processing will start automatically.`,
+    }, 201);
   } catch (error) {
-    console.error('Upload error:', error);
-    return NextResponse.json(
-      {
-        success: false,
-        error: 'Error interno del servidor',
-        details: error instanceof Error ? error.message : 'Error desconocido',
-      },
-      { status: 500 }
-    );
+    console.error('[API /upload POST] Error:', error);
+    return errorResponse('Failed to upload CSV', error instanceof Error ? error.message : undefined);
   }
 }
