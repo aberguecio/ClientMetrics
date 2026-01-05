@@ -68,38 +68,40 @@ export default function ChartRenderer({ chart, data }: ChartRendererProps) {
 
       return (
         <ResponsiveContainer width="100%" height={300}>
-          <div style={{ width: '100%', height: '100%', position: 'relative' }}>
-            <svg width="100%" height="100%" style={{ position: 'absolute', top: 0, left: 0 }}>
-              <Wordcloud
-                words={wordCloudData}
-                width={800}
-                height={300}
-                fontSize={(datum) => Math.log2(datum.value + 1) * 10}
-                font="Arial"
-                padding={2}
-                spiral="archimedean"
-                rotate={0}
-                random={() => 0.5}
-              >
-                {(cloudWords) =>
-                  cloudWords.map((w, i) => (
-                    <text
-                      key={`${w.text}-${i}`}
-                      fontSize={w.size}
-                      fontFamily={w.font}
-                      fill={colors[i % colors.length]}
-                      textAnchor="middle"
-                      transform={`translate(${w.x}, ${w.y}) rotate(${w.rotate})`}
-                      style={{ cursor: 'pointer' }}
-                      title={`${w.text}: ${w.value} menciones`}
-                    >
-                      {w.text}
-                    </text>
-                  ))
-                }
-              </Wordcloud>
-            </svg>
-          </div>
+          <Wordcloud
+            words={wordCloudData}
+            width={400}
+            height={300}
+            fontSize={(datum) => {
+              if (!datum || !datum.text) return 10; // Fallback size for invalid data
+              const baseSize = Math.log2(datum.value + 1);
+              // Smaller multiplier for longer text (phrases)
+              const multiplier = datum.text.split(' ').length > 2 ? 8 : 10;
+              return baseSize * multiplier;
+            }}
+            font="Arial"
+            padding={2}
+            spiral="archimedean"
+            rotate={0}
+            random={() => 0.5}
+          >
+            {(cloudWords) =>
+              cloudWords.map((w, i) => (
+                <text
+                  key={`${w.text}-${i}`}
+                  fontSize={w.size}
+                  fontFamily={w.font}
+                  fill={colors[i % colors.length]}
+                  textAnchor="middle"
+                  transform={`translate(${w.x}, ${w.y}) rotate(${w.rotate})`}
+                  style={{ cursor: 'pointer' }}
+                  title={`${w.text}: ${w.value} menciones`}
+                >
+                  {w.text}
+                </text>
+              ))
+            }
+          </Wordcloud>
         </ResponsiveContainer>
       );
 
@@ -178,7 +180,32 @@ export default function ChartRenderer({ chart, data }: ChartRendererProps) {
                 position: 'insideLeft'
               }}
             />
-            <Tooltip />
+            <Tooltip content={({ active, payload, label }) => {
+              if (!active || !payload || payload.length === 0) return null;
+
+              const isCumulative = chart.cumulative;
+
+              return (
+                <div style={{ backgroundColor: 'white', padding: '10px', border: '1px solid #ccc' }}>
+                  <p><strong>{label}</strong></p>
+                  {payload.map((entry: any, index: number) => {
+                    const value = entry.value;
+                    const originalValue = entry.payload[`${entry.dataKey}_original`] || entry.payload.originalValue;
+
+                    return (
+                      <div key={index} style={{ color: entry.color }}>
+                        <p>{entry.name}: {value}</p>
+                        {isCumulative && originalValue !== undefined && (
+                          <p style={{ fontSize: '0.9em', color: '#666' }}>
+                            (Valor del punto: {originalValue})
+                          </p>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              );
+            }} />
             <Legend />
             {hasMultipleSeries ? (
               // Multiple series: render a Line for each series
@@ -215,7 +242,32 @@ export default function ChartRenderer({ chart, data }: ChartRendererProps) {
                 position: 'insideLeft'
               }}
             />
-            <Tooltip />
+            <Tooltip content={({ active, payload, label }) => {
+              if (!active || !payload || payload.length === 0) return null;
+
+              const isCumulative = chart.cumulative;
+
+              return (
+                <div style={{ backgroundColor: 'white', padding: '10px', border: '1px solid #ccc' }}>
+                  <p><strong>{label}</strong></p>
+                  {payload.map((entry: any, index: number) => {
+                    const value = entry.value;
+                    const originalValue = entry.payload[`${entry.dataKey}_original`] || entry.payload.originalValue;
+
+                    return (
+                      <div key={index} style={{ color: entry.color }}>
+                        <p>{entry.name}: {value}</p>
+                        {isCumulative && originalValue !== undefined && (
+                          <p style={{ fontSize: '0.9em', color: '#666' }}>
+                            (Valor del punto: {originalValue})
+                          </p>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              );
+            }} />
             <Legend />
             {hasMultipleSeries ? (
               // Multiple series: render an Area for each series
@@ -249,7 +301,7 @@ export default function ChartRenderer({ chart, data }: ChartRendererProps) {
                 const data = payload[0].payload;
                 return (
                   <div style={{ backgroundColor: 'white', padding: '10px', border: '1px solid #ccc' }}>
-                    <p><strong>{data.tooltipLabel}</strong></p>
+                    <p><strong>{data.fieldLabel}:</strong> {data.tooltipLabel}</p>
                     <p>Cluster: {data.cluster + 1}</p>
                   </div>
                 );

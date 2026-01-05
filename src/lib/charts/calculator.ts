@@ -5,6 +5,53 @@ import type { SalesMeeting } from '@/lib/db/schema';
 import { getFieldMetadata, isFieldClosedArray, isFieldAggregable } from './field-metadata';
 
 /**
+ * Applies cumulative sum to chart data (running total)
+ * Supports both single-series and multi-series charts
+ *
+ * @param data - Chart data to transform
+ * @returns Chart data with cumulative values
+ */
+function applyCumulativeSum(data: ChartData[]): ChartData[] {
+  if (data.length === 0) return data;
+
+  // Detect if multi-series by checking first data point for extra keys
+  const firstPoint = data[0];
+  const seriesKeys = Object.keys(firstPoint).filter(
+    k => k !== 'label' && k !== 'value' && k !== 'originalValue' && k !== 'raw_key'
+  );
+
+  const result: ChartData[] = [];
+  const accumulators: { [key: string]: number } = {};
+
+  for (const point of data) {
+    const newPoint: ChartData = { ...point };
+
+    if (seriesKeys.length > 0) {
+      // Multi-series: accumulate each series separately
+      for (const key of seriesKeys) {
+        const originalVal = point[key] || 0;
+        newPoint[`${key}_original`] = originalVal; // Store original
+        accumulators[key] = (accumulators[key] || 0) + originalVal;
+        newPoint[key] = accumulators[key];
+      }
+      // Update main value as sum of all series
+      newPoint.value = seriesKeys.reduce((sum, key) => {
+        return sum + (typeof newPoint[key] === 'number' ? newPoint[key] : 0);
+      }, 0);
+    } else {
+      // Single series: accumulate 'value' field
+      newPoint.originalValue = point.value;
+      accumulators.value = (accumulators.value || 0) + point.value;
+      newPoint.value = accumulators.value;
+    }
+
+    result.push(newPoint);
+  }
+
+  return result;
+}
+
+/**
  * Calculates chart data based on chart configuration and filters
  *
  * @param chart - Chart configuration
@@ -69,12 +116,26 @@ export async function calculateChartData(
 
   if (needsMultipleSeries) {
     // Multiple series: group by both x_axis and group_by
-    return calculateMultiSeriesData(meetings, chart);
+    let chartData = calculateMultiSeriesData(meetings, chart);
+
+    // Apply cumulative sum if enabled
+    if (chart.cumulative) {
+      chartData = applyCumulativeSum(chartData);
+    }
+
+    return chartData;
   } else {
     // Single series: standard grouping
     const grouped = groupByField(meetings, primaryGroupField, chart.time_group);
     const aggregated = applyAggregation(grouped, chart.aggregation, chart.y_axis);
-    return formatForChart(aggregated, chart.x_axis, chart.y_axis);
+    let chartData = formatForChart(aggregated, chart.x_axis, chart.y_axis);
+
+    // Apply cumulative sum if enabled
+    if (chart.cumulative) {
+      chartData = applyCumulativeSum(chartData);
+    }
+
+    return chartData;
   }
 }
 
@@ -592,6 +653,33 @@ export function calculateWordCloudData(
   const wordMap = new Map<string, number>();
   const fieldName = chart.x_axis; // 'pain_points', 'use_cases', 'objections', 'others'
   const MIN_FREQUENCY = 2;
+  const textMode = chart.text_mode || 'words'; // Default to words for backward compatibility
+
+  // PHRASE MODE: Use complete array items as phrases
+  if (textMode === 'phrases') {
+    for (const meeting of meetings) {
+      if (!meeting.analysis) continue;
+      const fieldValue = meeting.analysis[fieldName];
+
+      if (Array.isArray(fieldValue)) {
+        for (const phrase of fieldValue) {
+          if (typeof phrase === 'string' && phrase.trim()) {
+            const normalized = phrase.trim().toLowerCase();
+            wordMap.set(normalized, (wordMap.get(normalized) || 0) + 1);
+          }
+        }
+      }
+    }
+
+    // Return top 50 phrases by frequency
+    return Array.from(wordMap.entries())
+      .filter(([_, count]) => count >= MIN_FREQUENCY)
+      .map(([text, value]) => ({ text, value }))
+      .sort((a, b) => b.value - a.value)
+      .slice(0, 50);
+  }
+
+  // WORDS MODE: Split and filter stop words (existing behavior)
   const MIN_WORD_LENGTH = 3; // Ignorar palabras muy cortas
 
   // Palabras comunes a ignorar (stop words en español)

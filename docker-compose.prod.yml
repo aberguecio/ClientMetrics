@@ -1,0 +1,56 @@
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: clientmetrics_postgres_prod
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-clientmetrics}
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./docker/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - clientmetrics
+    restart: unless-stopped
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: production
+    container_name: clientmetrics_app_prod
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-clientmetrics}
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+      NODE_ENV: production
+      NEXT_PUBLIC_APP_URL: https://metrics.berguecio.cl
+    depends_on:
+      postgres:
+        condition: service_healthy
+    command: sh -c "npm run db:migrate && node server.js"
+    networks:
+      - clientmetrics
+      - proxy
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.clientmetrics-frontend.rule=Host(`metrics.berguecio.cl`)"
+      - "traefik.http.routers.clientmetrics-frontend.entrypoints=websecure"
+      - "traefik.http.routers.clientmetrics-frontend.tls=true"
+      - "traefik.http.services.clientmetrics-frontend.loadbalancer.server.port=3000"
+      - "traefik.docker.network=proxy"
+      - "monitoring.url=https://metrics.berguecio.cl"
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+
+networks:
+  clientmetrics:
+    driver: bridge
+  proxy:
+    external: true

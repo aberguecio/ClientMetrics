@@ -9,6 +9,7 @@ export interface VectorClusterData extends ChartData {
     y: number;
     cluster: number;
     tooltipLabel: string;
+    fieldLabel: string;
     meetingId: string;
 }
 
@@ -24,6 +25,8 @@ export function calculateVectorClusterData(
     chart: SavedChart
 ): VectorClusterData[] {
     console.log('🎯 [VECTOR CALCULATOR] Starting calculation for chart:', chart.id);
+    console.log('🎯 [VECTOR CALCULATOR] k_clusters:', chart.k_clusters);
+    console.log('🎯 [VECTOR CALCULATOR] label_field:', chart.label_field);
 
     // 1. Filter meetings with valid embeddings
     const validMeetings = meetings.filter(m => m.embedding && m.embedding.trim() !== '');
@@ -67,6 +70,10 @@ export function calculateVectorClusterData(
     const result: VectorClusterData[] = [];
     const labelField = chart.label_field || 'clientName';
 
+    // Get field metadata for human-readable label
+    const metadata = getFieldMetadata(labelField);
+    const fieldLabel = metadata ? metadata.label : labelField;
+
     reducedVectors.forEach((vec, i) => {
         const originalIndex = meetingIndices[i];
         const meeting = validMeetings[originalIndex];
@@ -80,7 +87,6 @@ export function calculateVectorClusterData(
             labelValue = String(meeting.analysis[labelField]);
         } else {
             // Try nested
-            const metadata = getFieldMetadata(labelField);
             if (metadata) {
                 const val = metadata.path.reduce((current: any, key: string) => current?.[key], meeting.analysis);
                 if (val !== undefined) labelValue = String(val);
@@ -94,6 +100,7 @@ export function calculateVectorClusterData(
             y: vec[1],
             cluster: cluster,
             tooltipLabel: labelValue,
+            fieldLabel: fieldLabel,
             meetingId: meeting.id,
             fill: getClusterColor(cluster), // Helper to assign color
         });

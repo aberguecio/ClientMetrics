@@ -45,6 +45,8 @@ export default function ChartBuilderModal({
   const [aggregation, setAggregation] = useState<AggregationType>(editChart?.aggregation || 'count');
   const [colors, setColors] = useState(editChart?.colors || '');
   const [chartFilterId, setChartFilterId] = useState(editChart?.chart_filter_id || '');
+  const [textMode, setTextMode] = useState<'words' | 'phrases'>(editChart?.text_mode || 'words');
+  const [cumulative, setCumulative] = useState(editChart?.cumulative || false);
   const [filters, setFilters] = useState<SavedFilter[]>([]);
   const [saving, setSaving] = useState(false);
   const [validationResult, setValidationResult] = useState<ValidationResult | null>(null);
@@ -57,11 +59,21 @@ export default function ChartBuilderModal({
       setDescription(editChart?.description || '');
       setChartType(editChart?.chart_type || 'bar');
       setXAxis(editChart?.x_axis || '');
-      setYAxis(editChart?.y_axis || 'count');
-      setGroupBy(editChart?.group_by || '');
+
+      // For vector_cluster charts, restore k_clusters and label_field
+      if (editChart?.chart_type === 'vector_cluster') {
+        setGroupBy(String(editChart?.k_clusters || 3)); // Load K from k_clusters
+        setYAxis(editChart?.label_field || 'clientName'); // Load label field from label_field
+      } else {
+        setYAxis(editChart?.y_axis || 'count');
+        setGroupBy(editChart?.group_by || '');
+      }
+
       setAggregation(editChart?.aggregation || 'count');
       setColors(editChart?.colors || '');
       setChartFilterId(editChart?.chart_filter_id || '');
+      setTextMode(editChart?.text_mode || 'words');
+      setCumulative(editChart?.cumulative || false);
       setStep(1);
 
       // Fetch filters
@@ -134,6 +146,7 @@ export default function ChartBuilderModal({
         payload.y_axis = 'count';
         payload.aggregation = 'count';
         payload.group_by = groupBy || '';
+        payload.text_mode = textMode; // Word vs phrases mode
       } else if (chartType === 'vector_cluster') {
         payload.x_axis = xAxis || 'embedding';
         payload.k_clusters = parseInt(groupBy) || 3; // Store K in k_clusters
@@ -144,6 +157,10 @@ export default function ChartBuilderModal({
       } else {
         payload.x_axis = xAxis;
         payload.group_by = groupBy || ''; // Optional for bar/line/area (multiple series)
+        // Add cumulative mode for line and area charts
+        if (chartType === 'line' || chartType === 'area') {
+          payload.cumulative = cumulative;
+        }
       }
 
       const response = await fetch(url, {
@@ -338,6 +355,58 @@ export default function ChartBuilderModal({
                   Cómo calcular el valor (contar, sumar, promediar, etc.)
                 </p>
               </div>
+
+              {/* Text Mode selector for wordcloud */}
+              {chartType === 'wordcloud' && (
+                <div>
+                  <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600 }}>
+                    Modo de Texto *
+                  </label>
+                  <div style={{ display: 'flex', gap: '1rem' }}>
+                    <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
+                      <input
+                        type="radio"
+                        value="words"
+                        checked={textMode === 'words'}
+                        onChange={() => setTextMode('words')}
+                        style={{ marginRight: '0.5rem' }}
+                      />
+                      Palabras Sueltas
+                    </label>
+                    <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
+                      <input
+                        type="radio"
+                        value="phrases"
+                        checked={textMode === 'phrases'}
+                        onChange={() => setTextMode('phrases')}
+                        style={{ marginRight: '0.5rem' }}
+                      />
+                      Frases Completas
+                    </label>
+                  </div>
+                  <p style={{ fontSize: '0.75rem', color: '#6b7280', marginTop: '0.25rem' }}>
+                    Analizar palabras individuales o frases completas del array
+                  </p>
+                </div>
+              )}
+
+              {/* Cumulative checkbox for line/area charts */}
+              {(chartType === 'line' || chartType === 'area') && (
+                <div>
+                  <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
+                    <input
+                      type="checkbox"
+                      checked={cumulative}
+                      onChange={(e: { target: { checked: boolean } }) => setCumulative(e.target.checked)}
+                      style={{ marginRight: '0.5rem' }}
+                    />
+                    <span style={{ fontWeight: 600 }}>Mostrar valores acumulados (suma corriente)</span>
+                  </label>
+                  <p style={{ fontSize: '0.75rem', color: '#6b7280', marginTop: '0.25rem' }}>
+                    Los valores se suman a los anteriores para mostrar un total acumulado
+                  </p>
+                </div>
+              )}
 
               {/* Validation errors and warnings */}
               {validationResult && validationResult.errors.length > 0 && (

@@ -60,6 +60,10 @@ export async function POST(request: Request) {
       aggregation: body.aggregation || 'count',
       timeGroup: body.time_group || null,
       colors: body.colors || null,
+      kClusters: body.k_clusters || null,
+      labelField: body.label_field || null,
+      textMode: body.text_mode || null,
+      cumulative: body.cumulative || false,
     });
 
     // Auto-add to view if view_id is provided

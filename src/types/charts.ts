@@ -19,6 +19,9 @@ export interface SavedChart {
   // New fields for vector clustering
   k_clusters?: number;
   label_field?: string;
+  // New fields for chart enhancements
+  text_mode?: 'words' | 'phrases';  // Word cloud: single words vs complete phrases
+  cumulative?: boolean;  // Line/Area: show cumulative values (running total)
   created_at: string;
   updated_at: string;
 }
@@ -95,6 +98,7 @@ export type MergedFilter = FilterData;
 export interface ChartData {
   label: string;
   value: number;
+  originalValue?: number; // Store non-cumulative value for tooltip (line/area charts)
   [key: string]: any;
 }
 

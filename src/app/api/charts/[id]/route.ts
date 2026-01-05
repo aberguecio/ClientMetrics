@@ -46,10 +46,10 @@ export async function PUT(
 
     // Validate chart_type if provided
     if (body.chart_type) {
-      const validChartTypes = ['pie', 'bar', 'line', 'area', 'wordcloud'];
+      const validChartTypes = ['pie', 'bar', 'line', 'area', 'wordcloud', 'vector_cluster'];
       if (!validChartTypes.includes(body.chart_type)) {
         return NextResponse.json(
-          { error: 'Invalid chart_type. Must be one of: pie, bar, line, area, wordcloud' },
+          { error: 'Invalid chart_type. Must be one of: pie, bar, line, area, wordcloud, vector_cluster' },
           { status: 400 }
         );
       }
@@ -76,6 +76,10 @@ export async function PUT(
     if (body.aggregation !== undefined) updateData.aggregation = body.aggregation;
     if (body.time_group !== undefined) updateData.timeGroup = body.time_group;
     if (body.colors !== undefined) updateData.colors = body.colors;
+    if (body.k_clusters !== undefined) updateData.kClusters = body.k_clusters;
+    if (body.label_field !== undefined) updateData.labelField = body.label_field;
+    if (body.text_mode !== undefined) updateData.textMode = body.text_mode;
+    if (body.cumulative !== undefined) updateData.cumulative = body.cumulative;
 
     const updatedChart = await updateChart(params.id, updateData);
 

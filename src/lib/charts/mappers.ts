@@ -20,6 +20,10 @@ export function mapChartToApi(chart: DbChart): SavedChart {
     aggregation: chart.aggregation as any,
     time_group: chart.timeGroup as any,
     colors: chart.colors,
+    k_clusters: chart.kClusters,
+    label_field: chart.labelField,
+    text_mode: chart.textMode as any,
+    cumulative: chart.cumulative,
     created_at: chart.createdAt.toISOString(),
     updated_at: chart.updatedAt.toISOString(),
   };

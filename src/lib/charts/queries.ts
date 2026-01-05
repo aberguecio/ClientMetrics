@@ -1,4 +1,4 @@
-import { eq, desc } from 'drizzle-orm';
+import { eq, desc, and } from 'drizzle-orm';
 import { db } from '@/lib/db';
 import { savedCharts, savedFilters, savedViews, viewCharts, viewFilters } from '@/lib/db/schema';
 import type { NewSavedChart, NewSavedFilter, NewSavedView, NewViewChart, NewViewFilter } from '@/lib/db/schema';
@@ -227,8 +227,10 @@ export async function addChartToView(data: NewViewChart) {
 export async function removeChartFromView(viewId: string, chartId: string) {
   await db
     .delete(viewCharts)
-    .where(eq(viewCharts.viewId, viewId))
-    .where(eq(viewCharts.chartId, chartId));
+    .where(and(
+      eq(viewCharts.viewId, viewId),
+      eq(viewCharts.chartId, chartId)
+    ));
 }
 
 // ============================================================================
@@ -249,6 +251,8 @@ export async function addFilterToView(data: NewViewFilter) {
 export async function removeFilterFromView(viewId: string, filterId: string) {
   await db
     .delete(viewFilters)
-    .where(eq(viewFilters.viewId, viewId))
-    .where(eq(viewFilters.filterId, filterId));
+    .where(and(
+      eq(viewFilters.viewId, viewId),
+      eq(viewFilters.filterId, filterId)
+    ));
 }

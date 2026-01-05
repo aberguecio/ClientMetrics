@@ -59,6 +59,10 @@ export const savedCharts = pgTable('saved_charts', {
   timeGroup: varchar('time_group', { length: 20 }), // 'day', 'week', 'month'
   colors: text('colors'), // Comma-separated colors
   chartFilterId: uuid('chart_filter_id').references(() => savedFilters.id, { onDelete: 'set null' }),
+  kClusters: integer('k_clusters'), // Number of clusters for vector charts
+  labelField: varchar('label_field', { length: 100 }), // Field to label points in vector charts
+  textMode: varchar('text_mode', { length: 20 }), // 'words' | 'phrases' for word clouds
+  cumulative: boolean('cumulative').notNull().default(false), // Line/Area: show cumulative values
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
 });
