@@ -34,7 +34,9 @@ export default function FilterBuilder({ isOpen, onClose, editFilter, onSave }: F
       setLoadingOptions(true);
       fetch('/api/meetings/filter-options')
         .then(res => res.json())
-        .then(data => {
+        .then(result => {
+          // Unwrap the data from the standardized API response
+          const data = result.data || result;
           setFilterOptions(data);
           setLoadingOptions(false);
         })

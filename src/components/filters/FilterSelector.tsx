@@ -1,7 +1,7 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import type { SavedFilter } from '@/types/charts';
+import { useFetchFilters } from '@/lib/hooks';
+import { LoadingState } from '@/components/common';
 import styles from './FilterSelector.module.css';
 
 interface FilterSelectorProps {
@@ -11,29 +11,10 @@ interface FilterSelectorProps {
 }
 
 export default function FilterSelector({ selectedFilterIds, onSelect, onDeselect }: FilterSelectorProps) {
-  const [filters, setFilters] = useState<SavedFilter[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    fetchFilters();
-  }, []);
-
-  async function fetchFilters() {
-    try {
-      const response = await fetch('/api/filters');
-      if (!response.ok) throw new Error('Failed to fetch filters');
-      const result = await response.json();
-      // Unwrap the data from the standardized API response
-      setFilters(result.data || result);
-    } catch (error) {
-      console.error('Error fetching filters:', error);
-    } finally {
-      setLoading(false);
-    }
-  }
+  const { filters, loading } = useFetchFilters();
 
   if (loading) {
-    return <div className={styles.loading}>Loading filters...</div>;
+    return <LoadingState message="Loading filters..." size="small" />;
   }
 
   if (filters.length === 0) {

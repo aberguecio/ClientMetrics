@@ -1,7 +1,7 @@
 'use client';
 
-import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useFetchViews } from '@/lib/hooks';
 import type { SavedView } from '@/types/charts';
 import styles from './ViewSelector.module.css';
 
@@ -24,35 +24,14 @@ export default function ViewSelector({
   inPlaceMode = false,
 }: ViewSelectorProps) {
   const router = useRouter();
-  const [localViews, setLocalViews] = useState<SavedView[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { views: fetchedViews, loading } = useFetchViews(!inPlaceMode);
 
-  // Use prop views if provided (in-place mode), otherwise fetch
-  const views = inPlaceMode && propViews ? propViews : localViews;
+  // Use prop views if provided (in-place mode), otherwise use fetched views
+  const views = inPlaceMode && propViews ? propViews : fetchedViews;
   const selectedId = inPlaceMode ? activeViewId : currentViewId;
 
-  useEffect(() => {
-    // Only fetch if not in in-place mode
-    if (!inPlaceMode) {
-      fetchViews();
-    } else {
-      setLoading(false);
-    }
-  }, [inPlaceMode]);
-
-  async function fetchViews() {
-    try {
-      const response = await fetch('/api/views');
-      if (!response.ok) throw new Error('Failed to fetch views');
-      const result = await response.json();
-      // Unwrap the data from the standardized API response
-      setLocalViews(result.data || result);
-    } catch (error) {
-      console.error('Error fetching views:', error);
-    } finally {
-      setLoading(false);
-    }
-  }
+  // In inPlaceMode, loading should not disable the select since views come from props
+  const isDisabled = inPlaceMode ? false : loading;
 
   function handleViewChange(viewId: string) {
     if (inPlaceMode && onChange) {
@@ -79,7 +58,7 @@ export default function ViewSelector({
         id="view-selector"
         value={selectedId || ''}
         onChange={(e) => handleViewChange(e.target.value)}
-        disabled={loading}
+        disabled={isDisabled}
         className={styles.select}
       >
         <option value="">Select View...</option>

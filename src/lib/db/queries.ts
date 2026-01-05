@@ -2,7 +2,7 @@ import { db } from './index';
 import { salesMeetings, llmAnalysis, processingJobs, uploads } from './schema';
 import { eq, desc, and, sql, count, isNull, inArray, gte, lte } from 'drizzle-orm';
 import type { MetricsOverview, RepPerformance, CategoryDistribution, TrendData, AnalyticsData } from '@/types/api';
-import type { SavedFilter } from '@/types/charts';
+import type { SavedFilter, MergedFilter } from '@/types/charts';
 import { calculatePercentage } from '../utils';
 
 
@@ -32,9 +32,9 @@ export async function getAllMeetingsWithAnalysis() {
 }
 
 /**
- * Get meetings filtered by SavedFilter criteria
+ * Get meetings filtered by filter criteria (accepts either SavedFilter or MergedFilter)
  */
-export async function getMeetingsWithFilters(filter: SavedFilter) {
+export async function getMeetingsWithFilters(filter: SavedFilter | MergedFilter) {
   const conditions: any[] = [];
 
   // Base fields filters

@@ -1,6 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useFetchViews, useFetchFilters, useModalState } from '@/lib/hooks';
+import { LoadingState } from '@/components/common';
 import DashboardHeader from './DashboardHeader';
 import StatsRow from './StatsRow';
 import ChartsGrid from './ChartsGrid';
@@ -18,28 +20,22 @@ interface ViewWithDetails extends SavedView {
 export default function DashboardPageClient() {
   const [activeViewId, setActiveViewId] = useState<string | null>(null);
   const [view, setView] = useState<ViewWithDetails | null>(null);
-  const [views, setViews] = useState<SavedView[]>([]);
   const [loading, setLoading] = useState(true);
-  const [allFilters, setAllFilters] = useState<SavedFilter[]>([]);
   const [activeFilterIds, setActiveFilterIds] = useState<string[]>([]);
 
-  // Modal states
-  const [isChartModalOpen, setIsChartModalOpen] = useState(false);
-  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
-  const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
-  const [editingChart, setEditingChart] = useState<SavedChart | undefined>();
-  const [editingView, setEditingView] = useState<SavedView | undefined>();
-  const [refreshKey, setRefreshKey] = useState(0);
+  // Use custom hooks
+  const { views, refetch: refetchViews } = useFetchViews();
+  const { filters: allFilters, refetch: refetchFilters } = useFetchFilters();
+
+  // Modal states with custom hook
+  const chartModal = useModalState<SavedChart>();
+  const viewModal = useModalState<SavedView>();
+  const filterModal = useModalState();
 
   // Load default view on mount
   useEffect(() => {
     loadDefaultView();
   }, []);
-
-  // Load all views when refreshKey changes
-  useEffect(() => {
-    fetchViews();
-  }, [refreshKey]);
 
   // Load active view details when activeViewId changes
   useEffect(() => {
@@ -49,12 +45,7 @@ export default function DashboardPageClient() {
       setView(null);
       setLoading(false);
     }
-  }, [activeViewId, refreshKey]);
-
-  // Load all filters
-  useEffect(() => {
-    fetchFilters();
-  }, [refreshKey]);
+  }, [activeViewId]);
 
   // Initialize active filters from view
   useEffect(() => {
@@ -70,7 +61,6 @@ export default function DashboardPageClient() {
       const response = await fetch('/api/views/default');
       if (response.ok) {
         const result = await response.json();
-        // Unwrap the data from the standardized API response
         const defaultView = result.data || result;
         if (defaultView?.id) {
           setActiveViewId(defaultView.id);
@@ -81,26 +71,12 @@ export default function DashboardPageClient() {
     }
   }
 
-  async function fetchViews() {
-    try {
-      const response = await fetch('/api/views');
-      if (response.ok) {
-        const result = await response.json();
-        // Unwrap the data from the standardized API response
-        setViews(result.data || result);
-      }
-    } catch (error) {
-      console.error('Error fetching views:', error);
-    }
-  }
-
   async function fetchViewDetails(viewId: string) {
     try {
       setLoading(true);
       const response = await fetch(`/api/views/${viewId}`);
       if (response.ok) {
         const result = await response.json();
-        // Unwrap the data from the standardized API response
         setView(result.data || result);
       }
     } catch (error) {
@@ -110,21 +86,12 @@ export default function DashboardPageClient() {
     }
   }
 
-  async function fetchFilters() {
-    try {
-      const response = await fetch('/api/filters');
-      if (response.ok) {
-        const result = await response.json();
-        // Unwrap the data from the standardized API response
-        setAllFilters(result.data || result);
-      }
-    } catch (error) {
-      console.error('Error fetching filters:', error);
-    }
-  }
-
   function refresh() {
-    setRefreshKey(prev => prev + 1);
+    refetchViews();
+    refetchFilters();
+    if (activeViewId) {
+      fetchViewDetails(activeViewId);
+    }
   }
 
   async function handleDeleteChart(chartId: string) {
@@ -148,24 +115,20 @@ export default function DashboardPageClient() {
   }
 
   function handleEditChart(chart: SavedChart) {
-    setEditingChart(chart);
-    setIsChartModalOpen(true);
+    chartModal.openWithItem(chart);
   }
 
   function handleCreateChart() {
-    setEditingChart(undefined);
-    setIsChartModalOpen(true);
+    chartModal.open();
   }
 
   function handleCreateView() {
-    setEditingView(undefined);
-    setIsViewModalOpen(true);
+    viewModal.open();
   }
 
   function handleEditView() {
     if (view) {
-      setEditingView(view);
-      setIsViewModalOpen(true);
+      viewModal.openWithItem(view);
     }
   }
 
@@ -210,7 +173,7 @@ export default function DashboardPageClient() {
         onCreateView={handleCreateView}
         onEditView={handleEditView}
         onDeleteView={handleDeleteView}
-        onManageFilters={() => setIsFilterModalOpen(true)}
+        onManageFilters={filterModal.open}
         allFilters={allFilters}
         activeFilterIds={activeFilterIds}
         onFilterToggle={handleFilterToggle}
@@ -220,7 +183,7 @@ export default function DashboardPageClient() {
       <StatsRow view={view} />
 
       {loading ? (
-        <div style={{ textAlign: 'center', padding: '2rem' }}>Cargando...</div>
+        <LoadingState message="Cargando vista..." />
       ) : !view ? (
         <div style={{ textAlign: 'center', padding: '2rem', color: '#666' }}>
           <p>No hay vista seleccionada.</p>
@@ -238,30 +201,24 @@ export default function DashboardPageClient() {
 
       {/* Modals */}
       <ChartBuilderModal
-        isOpen={isChartModalOpen}
-        onClose={() => {
-          setIsChartModalOpen(false);
-          setEditingChart(undefined);
-        }}
-        editChart={editingChart}
+        isOpen={chartModal.isOpen}
+        onClose={chartModal.close}
+        editChart={chartModal.editingItem}
         currentViewId={activeViewId}
         autoAddToView={true}
         onSave={refresh}
       />
 
       <ViewManager
-        isOpen={isViewModalOpen}
-        onClose={() => {
-          setIsViewModalOpen(false);
-          setEditingView(undefined);
-        }}
-        editView={editingView}
+        isOpen={viewModal.isOpen}
+        onClose={viewModal.close}
+        editView={viewModal.editingItem}
         onSave={refresh}
       />
 
       <FilterBuilder
-        isOpen={isFilterModalOpen}
-        onClose={() => setIsFilterModalOpen(false)}
+        isOpen={filterModal.isOpen}
+        onClose={filterModal.close}
         onSave={refresh}
       />
     </div>

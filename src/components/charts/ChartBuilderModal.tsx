@@ -1,9 +1,10 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useFetchFilters } from '@/lib/hooks';
 import VariableSelector from './VariableSelector';
 import ChartPreview from './ChartPreview';
-import type { ChartType, AggregationType, SavedChart, SavedFilter } from '@/types/charts';
+import type { ChartType, AggregationType, SavedChart } from '@/types/charts';
 import styles from './ChartBuilderModal.module.css';
 import { validateChartConfig, type ValidationResult } from '@/lib/charts/validation';
 import { getChartConfig, AxisRole, getAllowedAggregations } from '@/lib/charts/chart-config';
@@ -47,9 +48,11 @@ export default function ChartBuilderModal({
   const [chartFilterId, setChartFilterId] = useState(editChart?.chart_filter_id || '');
   const [textMode, setTextMode] = useState<'words' | 'phrases'>(editChart?.text_mode || 'words');
   const [cumulative, setCumulative] = useState(editChart?.cumulative || false);
-  const [filters, setFilters] = useState<SavedFilter[]>([]);
   const [saving, setSaving] = useState(false);
   const [validationResult, setValidationResult] = useState<ValidationResult | null>(null);
+
+  // Fetch filters with custom hook
+  const { filters, refetch: refetchFilters } = useFetchFilters(false);
 
   // Reset form when editChart changes or modal opens
   useEffect(() => {
@@ -76,17 +79,10 @@ export default function ChartBuilderModal({
       setCumulative(editChart?.cumulative || false);
       setStep(1);
 
-      // Fetch filters
-      fetch('/api/filters')
-        .then((r) => r.json())
-        .then((result) => {
-          // Unwrap the data from the standardized API response
-          const data = result.data || result;
-          setFilters(data);
-        })
-        .catch((err) => console.error('Error fetching filters:', err));
+      // Fetch filters when modal opens
+      refetchFilters();
     }
-  }, [isOpen, editChart]);
+  }, [isOpen, editChart, refetchFilters]);
 
   // Real-time validation (run on steps 2 and 3)
   useEffect(() => {

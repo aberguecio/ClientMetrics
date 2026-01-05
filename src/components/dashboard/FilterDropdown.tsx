@@ -1,34 +1,14 @@
 'use client';
 
-import { useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import type { SavedFilter } from '@/types/charts';
+import { useFetchFilters } from '@/lib/hooks';
 import styles from './FilterDropdown.module.css';
 
 export default function FilterDropdown() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [filters, setFilters] = useState<SavedFilter[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { filters, loading } = useFetchFilters();
   const currentFilterId = searchParams.get('filterId') || '';
-
-  useEffect(() => {
-    fetchFilters();
-  }, []);
-
-  async function fetchFilters() {
-    try {
-      const response = await fetch('/api/filters');
-      if (!response.ok) throw new Error('Failed to fetch filters');
-      const result = await response.json();
-      // Unwrap the data from the standardized API response
-      setFilters(result.data || result);
-    } catch (error) {
-      console.error('Error fetching filters:', error);
-    } finally {
-      setLoading(false);
-    }
-  }
 
   function handleFilterChange(filterId: string) {
     if (filterId) {
