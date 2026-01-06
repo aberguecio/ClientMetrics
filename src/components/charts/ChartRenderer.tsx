@@ -95,8 +95,8 @@ export default function ChartRenderer({ chart, data }: ChartRendererProps) {
                   textAnchor="middle"
                   transform={`translate(${w.x}, ${w.y}) rotate(${w.rotate})`}
                   style={{ cursor: 'pointer' }}
-                  title={`${w.text}: ${w.value} menciones`}
                 >
+                  <title>{`${w.text}: ${(w as any).value} menciones`}</title>
                   {w.text}
                 </text>
               ))

@@ -21,11 +21,11 @@ export function mergeFilters(
 
   // Apply all view filters (AND between them)
   for (const filter of viewFilters) {
-    if (!filter || !filter.filterData) {
+    if (!filter || !filter.filter_data) {
       console.log('⚠️ [MERGER] Skipping invalid filter:', filter);
       continue;
     }
-    const filterData = filter.filterData;
+    const filterData = filter.filter_data as any;
     console.log('🔄 [MERGER] Processing filter:', filter.id, filterData);
 
     // Copy all non-metadata fields
@@ -74,9 +74,9 @@ export function mergeFilters(
 
   // Apply chart filter (AND with view filters)
   // Chart filter values override view filter values if there's a conflict
-  if (chartFilter && chartFilter.filterData) {
+  if (chartFilter && chartFilter.filter_data) {
     console.log('🔄 [MERGER] Processing chart filter:', chartFilter.id);
-    const chartFilterData = chartFilter.filterData;
+    const chartFilterData = chartFilter.filter_data as any;
 
     if (chartFilterData.sales_rep !== undefined && chartFilterData.sales_rep !== null) {
       console.log('  ✓ Overriding sales_rep:', chartFilterData.sales_rep);

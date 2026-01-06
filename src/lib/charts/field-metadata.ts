@@ -91,14 +91,7 @@ const FIELD_REGISTRY: Record<string, FieldMetadata> = {
     temporal: true,
   },
 
-  count: {
-    key: 'count',
-    label: 'Cantidad de Reuniones',
-    category: FieldCategory.NUMERIC,
-    path: ['count'],
-    isNested: false,
-    temporal: false,
-  },
+
 
   clientName: {
     key: 'clientName',

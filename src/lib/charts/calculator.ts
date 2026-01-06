@@ -183,8 +183,8 @@ function calculateMultiSeriesData(
 
   // Get all unique series (group_by values)
   const allSeries = new Set<string>();
-  for (const groupMap of nestedMap.values()) {
-    for (const seriesName of groupMap.keys()) {
+  for (const groupMap of Array.from(nestedMap.values())) {
+    for (const seriesName of Array.from(groupMap.keys())) {
       allSeries.add(seriesName);
     }
   }
@@ -192,14 +192,14 @@ function calculateMultiSeriesData(
   // Format data for Recharts with multiple series
   const chartData: ChartData[] = [];
 
-  for (const [xValue, groupMap] of nestedMap.entries()) {
+  for (const [xValue, groupMap] of Array.from(nestedMap.entries())) {
     const dataPoint: ChartData = {
       label: xValue,
       value: 0, // Will be sum of all series
     };
 
     // Add each series value
-    for (const seriesName of allSeries) {
+    for (const seriesName of Array.from(allSeries)) {
       const meetings = groupMap.get(seriesName) || [];
       const value = applyAggregationToMeetings(meetings, chart.aggregation, chart.y_axis);
       dataPoint[seriesName] = value;
@@ -381,7 +381,7 @@ export function applyAggregation(
 ): Map<string, number> {
   const result = new Map<string, number>();
 
-  for (const [key, meetings] of grouped.entries()) {
+  for (const [key, meetings] of Array.from(grouped.entries())) {
     let value: number;
 
     // If field is 'count', always return count regardless of aggregation type
@@ -442,7 +442,7 @@ export function formatForChart(
 ): ChartData[] {
   const chartData: ChartData[] = [];
 
-  for (const [label, value] of data.entries()) {
+  for (const [label, value] of Array.from(data.entries())) {
     chartData.push({
       label,
       value,
@@ -608,8 +608,8 @@ function calculateClosedArrayFrequencyWithGrouping(
 
   // Get all unique series (group values)
   const allSeries = new Set<string>();
-  for (const groupMap of nestedMap.values()) {
-    for (const seriesName of groupMap.keys()) {
+  for (const groupMap of Array.from(nestedMap.values())) {
+    for (const seriesName of Array.from(groupMap.keys())) {
       allSeries.add(seriesName);
     }
   }
@@ -617,14 +617,14 @@ function calculateClosedArrayFrequencyWithGrouping(
   // Format data for Recharts
   const chartData: ChartData[] = [];
 
-  for (const [xValue, groupMap] of nestedMap.entries()) {
+  for (const [xValue, groupMap] of Array.from(nestedMap.entries())) {
     const dataPoint: ChartData = {
       label: labelMap[xValue] || xValue,
       value: 0, // Total count
       raw_key: xValue,
     };
 
-    for (const seriesName of allSeries) {
+    for (const seriesName of Array.from(allSeries)) {
       const count = groupMap.get(seriesName) || 0;
       dataPoint[seriesName] = count;
       dataPoint.value += count;

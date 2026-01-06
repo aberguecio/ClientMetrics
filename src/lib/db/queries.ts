@@ -35,42 +35,44 @@ export async function getAllMeetingsWithAnalysis() {
  * Get meetings filtered by filter criteria (accepts either SavedFilter or MergedFilter)
  */
 export async function getMeetingsWithFilters(filter: SavedFilter | MergedFilter) {
+  // Accept either a SavedFilter (DB) or MergedFilter (plain object). Normalize to MergedFilter for checks
+  const filterData: MergedFilter = (filter as SavedFilter).filter_data ? (filter as SavedFilter).filter_data : (filter as MergedFilter);
   const conditions: any[] = [];
 
   // Base fields filters
-  if (filter.sales_rep) {
-    conditions.push(eq(salesMeetings.salesRep, filter.sales_rep));
+  if (filterData.sales_rep) {
+    conditions.push(eq(salesMeetings.salesRep, filterData.sales_rep));
   }
-  if (filter.closed !== undefined && filter.closed !== null) {
-    conditions.push(eq(salesMeetings.closed, filter.closed));
+  if (filterData.closed !== undefined && filterData.closed !== null) {
+    conditions.push(eq(salesMeetings.closed, filterData.closed));
   }
 
   // Date range filters
-  if (filter.date_from) {
-    conditions.push(gte(salesMeetings.meetingDate, filter.date_from));
+  if (filterData.date_from) {
+    conditions.push(gte(salesMeetings.meetingDate, filterData.date_from));
   }
-  if (filter.date_to) {
-    conditions.push(lte(salesMeetings.meetingDate, filter.date_to));
+  if (filterData.date_to) {
+    conditions.push(lte(salesMeetings.meetingDate, filterData.date_to));
   }
 
   // LLM analysis JSONB filters
-  if (filter.sector) {
-    conditions.push(sql`${llmAnalysis.analysisJson}->>'sector' = ${filter.sector}`);
+  if (filterData.sector) {
+    conditions.push(sql`${llmAnalysis.analysisJson}->>'sector' = ${filterData.sector}`);
   }
-  if (filter.company_size) {
-    conditions.push(sql`${llmAnalysis.analysisJson}->>'company_size' = ${filter.company_size}`);
+  if (filterData.company_size) {
+    conditions.push(sql`${llmAnalysis.analysisJson}->>'company_size' = ${filterData.company_size}`);
   }
-  if (filter.discovery_channel) {
-    conditions.push(sql`${llmAnalysis.analysisJson}->>'discovery_channel' = ${filter.discovery_channel}`);
+  if (filterData.discovery_channel) {
+    conditions.push(sql`${llmAnalysis.analysisJson}->>'discovery_channel' = ${filterData.discovery_channel}`);
   }
-  if (filter.budget_range) {
-    conditions.push(sql`${llmAnalysis.analysisJson}->>'budget_range' = ${filter.budget_range}`);
+  if (filterData.budget_range) {
+    conditions.push(sql`${llmAnalysis.analysisJson}->>'budget_range' = ${filterData.budget_range}`);
   }
-  if (filter.decision_maker !== undefined && filter.decision_maker !== null) {
-    conditions.push(sql`CAST(${llmAnalysis.analysisJson}->>'decision_maker' AS BOOLEAN) = ${filter.decision_maker}`);
+  if (filterData.decision_maker !== undefined && filterData.decision_maker !== null) {
+    conditions.push(sql`CAST(${llmAnalysis.analysisJson}->>'decision_maker' AS BOOLEAN) = ${filterData.decision_maker}`);
   }
-  if (filter.pain_points) {
-    conditions.push(sql`${llmAnalysis.analysisJson}->>'pain_points' ILIKE ${'%' + filter.pain_points + '%'}`);
+  if (filterData.pain_points) {
+    conditions.push(sql`${llmAnalysis.analysisJson}->>'pain_points' ILIKE ${'%' + filterData.pain_points + '%'}`);
   }
 
   const meetings = await db
