@@ -54,6 +54,8 @@ services:
       dockerfile: Dockerfile
       target: builder
     container_name: clientmetrics_migrate
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-clientmetrics}
     command: sh -c "npm run db:migrate"
     depends_on:
       - postgres
