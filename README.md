@@ -28,19 +28,35 @@ Full-stack application to analyze sales meeting transcriptions using AI, generat
 
 ### 1. Configure environment variables
 
-Edit the `.env` file
+Edit the `.env` file (create it from `.env.example`). Make sure the following variables are set: `DATABASE_URL`, `OPENAI_API_KEY`, `NODE_ENV`, and `NEXT_PUBLIC_APP_URL`.
 
-### 2. Start services with Docker Compose
+### 2. Start services with Docker Compose (local & production)
+
+For both local development and building the production image locally, use:
 
 ```bash
-docker-compose up -d
+docker compose up --build
 ```
+
+Notes:
+- For **local development**, the command above is sufficient (it builds images and starts services).
+- For **production deployments**, images are also built with the same command, but **database migrations should be applied separately** before or after the build to avoid shipping development tooling in the runtime image.
+
+Run migrations (one-off service):
+
+```bash
+docker compose run --rm migrate
+```
+
+Then (re)start the application service if needed:
+
+
 
 This will start:
 - PostgreSQL with pgvector on port 5432
 - Next.js app on port 3000
 
-### 4. Access the application
+### 3. Access the application
 
 Open your browser at: [http://localhost:3000](http://localhost:3000)
 
