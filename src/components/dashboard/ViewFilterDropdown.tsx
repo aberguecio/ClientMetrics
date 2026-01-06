@@ -8,12 +8,16 @@ interface ViewFilterDropdownProps {
   allFilters: SavedFilter[];
   activeFilterIds: string[];
   onFilterToggle: (filterId: string) => void;
+  onEditFilter: (filterId: string) => void;
+  onDeleteFilter: (filterId: string) => void;
 }
 
 export default function ViewFilterDropdown({
   allFilters,
   activeFilterIds,
   onFilterToggle,
+  onEditFilter,
+  onDeleteFilter,
 }: ViewFilterDropdownProps) {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -68,12 +72,36 @@ export default function ViewFilterDropdown({
                     onChange={() => onFilterToggle(filter.id)}
                     className={styles.checkbox}
                   />
-                  <span className={styles.filterName}>{filter.name}</span>
-                  {filter.description && (
-                    <span className={styles.filterDescription}>
-                      {filter.description}
-                    </span>
-                  )}
+                  <div className={styles.filterContent}>
+                    <span className={styles.filterName}>{filter.name}</span>
+                    {filter.description && (
+                      <span className={styles.filterDescription}>
+                        {filter.description}
+                      </span>
+                    )}
+                  </div>
+                  <div className={styles.filterActions}>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onEditFilter(filter.id);
+                      }}
+                      className={styles.actionButton}
+                      title="Editar filtro"
+                    >
+                      ✏️
+                    </button>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onDeleteFilter(filter.id);
+                      }}
+                      className={styles.actionButton}
+                      title="Eliminar filtro"
+                    >
+                      🗑️
+                    </button>
+                  </div>
                 </label>
               );
             })

@@ -4,7 +4,6 @@ import { useState, useEffect } from 'react';
 import { useFetchViews, useFetchFilters, useModalState } from '@/lib/hooks';
 import { LoadingState } from '@/components/common';
 import DashboardHeader from './DashboardHeader';
-import StatsRow from './StatsRow';
 import ChartsGrid from './ChartsGrid';
 import ChartBuilderModal from '@/components/charts/ChartBuilderModal';
 import ViewManager from '@/components/views/ViewManager';
@@ -163,6 +162,43 @@ export default function DashboardPageClient() {
     });
   }
 
+  function handleEditFilter(filterId: string) {
+    const filter = allFilters.find(f => f.id === filterId);
+    if (filter) {
+      filterModal.openWithItem(filter);
+    }
+  }
+
+  async function handleDeleteFilter(filterId: string) {
+    if (!confirm('¿Eliminar este filtro? Se removerá de todas las vistas que lo usen.')) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/filters/${filterId}`, {
+        method: 'DELETE',
+      });
+
+      if (response.ok) {
+        // Actualizar lista de filtros
+        refetchFilters();
+
+        // Si el filtro eliminado estaba activo, removerlo
+        setActiveFilterIds(prev => prev.filter(id => id !== filterId));
+
+        // Refrescar vista actual
+        if (activeViewId) {
+          fetchViewDetails(activeViewId);
+        }
+      } else {
+        alert('Error al eliminar el filtro');
+      }
+    } catch (error) {
+      console.error('Error deleting filter:', error);
+      alert('Error al eliminar el filtro');
+    }
+  }
+
   return (
     <div className="container">
       <DashboardHeader
@@ -177,10 +213,10 @@ export default function DashboardPageClient() {
         allFilters={allFilters}
         activeFilterIds={activeFilterIds}
         onFilterToggle={handleFilterToggle}
+        onEditFilter={handleEditFilter}
+        onDeleteFilter={handleDeleteFilter}
         hasActiveView={!!activeViewId}
       />
-
-      <StatsRow view={view} />
 
       {loading ? (
         <LoadingState message="Cargando vista..." />

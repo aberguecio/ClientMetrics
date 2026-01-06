@@ -17,6 +17,8 @@ interface DashboardHeaderProps {
   allFilters: SavedFilter[];
   activeFilterIds: string[];
   onFilterToggle: (filterId: string) => void;
+  onEditFilter: (filterId: string) => void;
+  onDeleteFilter: (filterId: string) => void;
   hasActiveView: boolean;
 }
 
@@ -32,6 +34,8 @@ export default function DashboardHeader({
   allFilters,
   activeFilterIds,
   onFilterToggle,
+  onEditFilter,
+  onDeleteFilter,
   hasActiveView,
 }: DashboardHeaderProps) {
   const activeView = views.find(v => v.id === activeViewId);
@@ -49,14 +53,16 @@ export default function DashboardHeader({
         <button onClick={onCreateView} className="btn-success">
           + Crear Vista
         </button>
-        <button onClick={onManageFilters} className="btn-neutral">
-          Filtros
-        </button>
         <ViewFilterDropdown
           allFilters={allFilters}
           activeFilterIds={activeFilterIds}
           onFilterToggle={onFilterToggle}
+          onEditFilter={onEditFilter}
+          onDeleteFilter={onDeleteFilter}
         />
+        <button onClick={onManageFilters} className="btn-success">
+          + Crear Filtro
+        </button>
       </div>
 
       {/* Segunda fila: Nombre de vista + acciones */}
@@ -71,7 +77,7 @@ export default function DashboardHeader({
               🗑️
             </button>
           </div>
-          <button onClick={onCreateChart} className="btn-featured">
+          <button onClick={onCreateChart} className="btn-success">
             + Crear Gráfico
           </button>
         </div>

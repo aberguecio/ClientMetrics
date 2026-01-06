@@ -81,17 +81,47 @@
   cursor: pointer;
 }
 
+.filterContent {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  gap: 0.25rem;
+}
+
 .filterName {
   font-weight: 500;
   color: #111827;
-  flex: 1;
 }
 
 .filterDescription {
   display: block;
   font-size: 0.75rem;
   color: #6b7280;
-  margin-top: 0.25rem;
+}
+
+.filterActions {
+  display: flex;
+  gap: 0.25rem;
+  opacity: 0.6;
+  transition: opacity 0.2s;
+}
+
+.filterOption:hover .filterActions {
+  opacity: 1;
+}
+
+.actionButton {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0.25rem;
+  font-size: 1.1rem;
+  line-height: 1;
+  transition: transform 0.2s;
+}
+
+.actionButton:hover {
+  transform: scale(1.2);
 }
 
 .emptyMessage {
