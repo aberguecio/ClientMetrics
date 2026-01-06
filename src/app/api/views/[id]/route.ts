@@ -79,6 +79,11 @@ export async function PUT(
     if (body.filter_ids !== undefined && Array.isArray(body.filter_ids)) {
       // Obtener filtros actuales de la vista
       const viewWithDetails = await getViewWithDetails(params.id);
+
+      if (!viewWithDetails) {
+        return errorResponse('View not found');
+      }
+
       const currentFilterIds = viewWithDetails.filters.map(f => f.id);
       const newFilterIds = body.filter_ids as string[];
 
