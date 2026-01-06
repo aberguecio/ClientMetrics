@@ -36,8 +36,8 @@ FROM base AS production
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 
-# Provide node_modules in production so we can run migration scripts at container start
-COPY --from=deps /app/node_modules ./node_modules
+# Provide node_modules in production (production deps only)
+COPY --from=deps-prod /app/node_modules ./node_modules
 
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
