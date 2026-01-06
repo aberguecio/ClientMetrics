@@ -1,4 +1,4 @@
-import { openai, MODELS } from './openai';
+import { getOpenAIOrThrow, MODELS } from './openai';
 import { buildCategorizationPrompt } from './prompts';
 import { AnalysisSchema, type Analysis, type CategorizationParams } from '@/types/llm';
 
@@ -44,6 +44,7 @@ async function categorizeMeeting(params: CategorizationParams): Promise<Analysis
       closed: params.closed,
       transcript: params.transcript,
     });
+    const openai = getOpenAIOrThrow();
     const response = await openai.chat.completions.create({
       model: MODELS.LLM,
       messages: [

@@ -1,4 +1,4 @@
-import { openai, MODELS } from './openai';
+import { getOpenAIOrThrow, MODELS } from './openai';
 
 /**
  * Generate embeddings for a text using OpenAI
@@ -10,6 +10,7 @@ export async function generateEmbedding(text: string): Promise<number[]> {
     const maxChars = 30000; // Approximate limit
     const truncatedText = text.length > maxChars ? text.substring(0, maxChars) : text;
 
+    const openai = getOpenAIOrThrow();
     const response = await openai.embeddings.create({
       model: MODELS.EMBEDDING,
       input: truncatedText,
