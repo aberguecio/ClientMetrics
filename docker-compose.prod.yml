@@ -32,7 +32,8 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
-    command: sh -c "npm run db:migrate && node server.js"
+    # Run only the node server in production; migrations are executed via a separate migrate service
+    command: node server.js
     networks:
       - clientmetrics
       - proxy
@@ -45,6 +46,20 @@ services:
       - "traefik.docker.network=proxy"
       - "monitoring.url=https://metrics.berguecio.cl"
     restart: unless-stopped
+
+  # One-off migrate service using the builder target (includes dev deps and tsx)
+  migrate:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: builder
+    container_name: clientmetrics_migrate
+    command: sh -c "npm run db:migrate"
+    depends_on:
+      - postgres
+    networks:
+      - clientmetrics
+    restart: "no"
 
 volumes:
   postgres_data:
