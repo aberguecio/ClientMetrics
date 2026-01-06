@@ -304,61 +304,68 @@ export default function ChartBuilderModal({
           <div>
             <h3 className={styles.stepTitle}>Step 2 of 3: Configure Variables</h3>
             <div className={styles.formGrid}>
-              {chartConfig.axisRequirements.map((requirement) => (
-                <div key={requirement.role}>
-                  <VariableSelector
-                    label={requirement.description + (requirement.required ? ' *' : '')}
-                    value={
-                      requirement.role === AxisRole.X_AXIS || requirement.role === AxisRole.TEXT_FIELD
-                        ? xAxis
-                        : requirement.role === AxisRole.Y_AXIS
-                          ? yAxis
-                          : groupBy
-                    }
-                    onChange={(value) => {
-                      if (requirement.role === AxisRole.X_AXIS || requirement.role === AxisRole.TEXT_FIELD) {
-                        setXAxis(value);
-                      } else if (requirement.role === AxisRole.Y_AXIS) {
-                        setYAxis(value);
-                      } else {
-                        setGroupBy(value);
+              {chartConfig.axisRequirements.map((requirement) => {
+                // Hide "Filtrar Por / group_by" field for wordclouds since it's not used
+                if (chartType === 'wordcloud' && requirement.role === AxisRole.GROUP_BY) return null;
+
+                return (
+                  <div key={requirement.role}>
+                    <VariableSelector
+                      label={requirement.description + (requirement.required ? ' *' : '')}
+                      value={
+                        requirement.role === AxisRole.X_AXIS || requirement.role === AxisRole.TEXT_FIELD
+                          ? xAxis
+                          : requirement.role === AxisRole.Y_AXIS
+                            ? yAxis
+                            : groupBy
                       }
+                      onChange={(value) => {
+                        if (requirement.role === AxisRole.X_AXIS || requirement.role === AxisRole.TEXT_FIELD) {
+                          setXAxis(value);
+                        } else if (requirement.role === AxisRole.Y_AXIS) {
+                          setYAxis(value);
+                        } else {
+                          setGroupBy(value);
+                        }
+                      }}
+                      allowedCategories={requirement.allowedCategories}
+                      required={requirement.required}
+                    />
+                    <p style={{ fontSize: '0.75rem', color: '#6b7280', marginTop: '0.25rem' }}>
+                      {requirement.helpText}
+                    </p>
+                  </div>
+                );
+              })}
+
+              {/* Aggregation selector (not applicable for wordclouds) */}
+              {chartType !== 'wordcloud' && (
+                <div>
+                  <label htmlFor="aggregation" style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600 }}>
+                    Agregación *
+                  </label>
+                  <select
+                    id="aggregation"
+                    value={aggregation}
+                    onChange={(e) => setAggregation(e.target.value as AggregationType)}
+                    style={{
+                      width: '100%',
+                      padding: '0.5rem',
+                      border: '1px solid #d1d5db',
+                      borderRadius: '0.375rem',
                     }}
-                    allowedCategories={requirement.allowedCategories}
-                    required={requirement.required}
-                  />
+                  >
+                    {getAllowedAggregations(chartType).map(agg => (
+                      <option key={agg} value={agg}>
+                        {agg.charAt(0).toUpperCase() + agg.slice(1)}
+                      </option>
+                    ))}
+                  </select>
                   <p style={{ fontSize: '0.75rem', color: '#6b7280', marginTop: '0.25rem' }}>
-                    {requirement.helpText}
+                    Cómo calcular el valor (contar, sumar, promediar, etc.)
                   </p>
                 </div>
-              ))}
-
-              {/* Aggregation selector */}
-              <div>
-                <label htmlFor="aggregation" style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600 }}>
-                  Agregación *
-                </label>
-                <select
-                  id="aggregation"
-                  value={aggregation}
-                  onChange={(e) => setAggregation(e.target.value as AggregationType)}
-                  style={{
-                    width: '100%',
-                    padding: '0.5rem',
-                    border: '1px solid #d1d5db',
-                    borderRadius: '0.375rem',
-                  }}
-                >
-                  {getAllowedAggregations(chartType).map(agg => (
-                    <option key={agg} value={agg}>
-                      {agg.charAt(0).toUpperCase() + agg.slice(1)}
-                    </option>
-                  ))}
-                </select>
-                <p style={{ fontSize: '0.75rem', color: '#6b7280', marginTop: '0.25rem' }}>
-                  Cómo calcular el valor (contar, sumar, promediar, etc.)
-                </p>
-              </div>
+              )}
 
               {/* Text Mode selector for wordcloud */}
               {chartType === 'wordcloud' && (
