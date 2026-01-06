@@ -256,6 +256,7 @@ export default function DashboardPageClient() {
         isOpen={filterModal.isOpen}
         onClose={filterModal.close}
         onSave={refresh}
+        editFilter={filterModal.editingItem}
       />
     </div>
   );

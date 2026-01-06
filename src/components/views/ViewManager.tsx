@@ -1,14 +1,14 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import FilterSelector from '../filters/FilterSelector';
-import type { SavedView } from '@/types/charts';
+import type { SavedView, SavedFilter } from '@/types/charts';
 import styles from './ViewManager.module.css';
 
 interface ViewManagerProps {
   isOpen: boolean;
   onClose: () => void;
-  editView?: SavedView;
+  editView?: SavedView & { filters?: SavedFilter[] };
   onSave?: () => void; // Callback for refresh instead of reload
 }
 
@@ -18,6 +18,15 @@ export default function ViewManager({ isOpen, onClose, editView, onSave }: ViewM
   const [isDefault, setIsDefault] = useState(editView?.is_default || false);
   const [selectedFilterIds, setSelectedFilterIds] = useState<string[]>([]);
   const [saving, setSaving] = useState(false);
+
+  // Inicializar filtros cuando se abre para editar
+  useEffect(() => {
+    if (editView && editView.filters) {
+      setSelectedFilterIds(editView.filters.map(f => f.id));
+    } else {
+      setSelectedFilterIds([]);
+    }
+  }, [editView, isOpen]);
 
   if (!isOpen) return null;
 

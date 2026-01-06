@@ -1,4 +1,11 @@
-import { getViewWithDetails, getViewById, updateView, deleteView } from '@/lib/charts/queries';
+import {
+  getViewWithDetails,
+  getViewById,
+  updateView,
+  deleteView,
+  addFilterToView,
+  removeFilterFromView,
+} from '@/lib/charts/queries';
 import { mapViewWithDetailsToApi, mapViewToApi } from '@/lib/charts/mappers';
 import {
   successResponse,
@@ -40,8 +47,8 @@ export async function GET(
  * Update an existing view
  *
  * @param params.id - View ID
- * @param request.body - Fields to update
- * @returns Updated view
+ * @param request.body - Fields to update (name, objective, is_default, filter_ids)
+ * @returns Updated view with filters
  * @throws {404} If view not found
  * @throws {500} On database error
  */
@@ -65,9 +72,36 @@ export async function PUT(
     // Transform request body (snake_case to camelCase)
     const updateData = transformRequestBody(body, VIEW_FIELD_MAPPING);
 
+    // Update basic fields (name, objective, is_default)
     const updatedView = await updateView(params.id, updateData);
 
-    return successResponse(mapViewToApi(updatedView));
+    // Gestionar actualización de filtros si se proporcionaron
+    if (body.filter_ids !== undefined && Array.isArray(body.filter_ids)) {
+      // Obtener filtros actuales de la vista
+      const viewWithDetails = await getViewWithDetails(params.id);
+      const currentFilterIds = viewWithDetails.filters.map(f => f.id);
+      const newFilterIds = body.filter_ids as string[];
+
+      // Determinar qué filtros remover
+      const toRemove = currentFilterIds.filter(id => !newFilterIds.includes(id));
+
+      // Determinar qué filtros agregar
+      const toAdd = newFilterIds.filter(id => !currentFilterIds.includes(id));
+
+      // Ejecutar remociones
+      for (const filterId of toRemove) {
+        await removeFilterFromView(params.id, filterId);
+      }
+
+      // Ejecutar adiciones
+      for (const filterId of toAdd) {
+        await addFilterToView({ viewId: params.id, filterId });
+      }
+    }
+
+    // Retornar vista actualizada con filtros
+    const finalView = await getViewWithDetails(params.id);
+    return successResponse(mapViewWithDetailsToApi(finalView));
   } catch (error) {
     console.error('[API /views/[id] PUT] Error:', error);
     return errorResponse('Failed to update view', error instanceof Error ? error.message : undefined);
