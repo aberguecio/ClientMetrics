@@ -1,6 +1,6 @@
 export type ChartType = 'pie' | 'bar' | 'line' | 'area' | 'wordcloud' | 'vector_cluster';
 
-export type AggregationType = 'count' | 'sum' | 'avg' | 'min' | 'max';
+export type AggregationType = 'count' | 'sum' | 'avg' | 'min' | 'max' | 'median';
 
 export type TimeGrouping = 'day' | 'week' | 'month' | 'quarter' | 'year';
 
