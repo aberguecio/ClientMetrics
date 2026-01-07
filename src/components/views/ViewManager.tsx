@@ -32,7 +32,7 @@ export default function ViewManager({ isOpen, onClose, editView, onSave }: ViewM
 
   async function handleSave() {
     if (!name) {
-      alert('Please enter a view name');
+      alert('Por favor ingresa un nombre para la vista');
       return;
     }
 
@@ -53,7 +53,7 @@ export default function ViewManager({ isOpen, onClose, editView, onSave }: ViewM
       });
 
       if (!response.ok) {
-        throw new Error('Failed to save view');
+        throw new Error('Falló al guardar la vista');
       }
 
       // Call onSave callback or reload
@@ -65,7 +65,7 @@ export default function ViewManager({ isOpen, onClose, editView, onSave }: ViewM
 
       onClose();
     } catch (error) {
-      alert('Error saving view: ' + (error instanceof Error ? error.message : 'Unknown error'));
+      alert('Error al guardar la vista: ' + (error instanceof Error ? error.message : 'Error desconocido'));
     } finally {
       setSaving(false);
     }
@@ -84,7 +84,7 @@ export default function ViewManager({ isOpen, onClose, editView, onSave }: ViewM
       <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
         <div className={styles.header}>
           <h2 className={styles.title}>
-            {editView ? 'Edit View' : 'Create New View'}
+            {editView ? 'Editar vista' : 'Crear nueva vista'}
           </h2>
           <button onClick={onClose} className={styles.closeButton}>
             ✕
@@ -93,31 +93,31 @@ export default function ViewManager({ isOpen, onClose, editView, onSave }: ViewM
 
         <div className={styles.body}>
           <div className={styles.section}>
-            <h3 className={styles.sectionTitle}>View Details</h3>
+            <h3 className={styles.sectionTitle}>Detalles de la vista</h3>
             <div className={styles.formGrid}>
               <div>
                 <label htmlFor="name" className={styles.label}>
-                  View Name *
+                  Nombre de la vista *
                 </label>
                 <input
                   id="name"
                   type="text"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  placeholder="e.g., Sales Performance Q4"
+                  placeholder="Ej.: Rendimiento de ventas Q4"
                   className={styles.input}
                 />
               </div>
 
               <div>
                 <label htmlFor="objective" className={styles.label}>
-                  Objective
+                  Objetivo
                 </label>
                 <textarea
                   id="objective"
                   value={objective}
                   onChange={(e) => setObjective(e.target.value)}
-                  placeholder="What is the goal of this dashboard?"
+                  placeholder="¿Cuál es el objetivo de este tablero?"
                   rows={3}
                   className={styles.input}
                 />
@@ -132,16 +132,16 @@ export default function ViewManager({ isOpen, onClose, editView, onSave }: ViewM
                   className={styles.checkbox}
                 />
                 <label htmlFor="isDefault" className={styles.checkboxLabel}>
-                  Set as default view
+                  Establecer como vista predeterminada
                 </label>
               </div>
             </div>
           </div>
 
           <div className={styles.section}>
-            <h3 className={styles.sectionTitle}>Select Filters</h3>
+            <h3 className={styles.sectionTitle}>Seleccionar filtros</h3>
             <p className={styles.sectionDescription}>
-              These filters will apply to all charts in this view
+              Estos filtros se aplicarán a todos los gráficos de esta vista
             </p>
             <FilterSelector
               selectedFilterIds={selectedFilterIds}
@@ -151,16 +151,16 @@ export default function ViewManager({ isOpen, onClose, editView, onSave }: ViewM
           </div>
 
           <div className={styles.note}>
-            <strong>Note:</strong> After creating the view, you can add charts from the view page.
-          </div>
+            <strong>Nota:</strong> Después de crear la vista, puedes agregar gráficos desde la página de la vista.
+          </div> 
         </div>
 
         <div className={styles.footer}>
           <button onClick={onClose} className={styles.secondaryButton}>
-            Cancel
+            Cancelar
           </button>
           <button onClick={handleSave} disabled={saving} className={styles.primaryButton}>
-            {saving ? 'Saving...' : editView ? 'Update View' : 'Create View'}
+            {saving ? 'Guardando...' : editView ? 'Actualizar vista' : 'Crear vista'}
           </button>
         </div>
       </div>

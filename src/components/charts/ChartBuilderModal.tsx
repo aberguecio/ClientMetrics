@@ -99,6 +99,32 @@ export default function ChartBuilderModal({
     }
   }, [name, chartType, xAxis, yAxis, groupBy, aggregation, step]);
 
+  // Helper: map chart type to Spanish label
+  function chartTypeLabel(type: ChartType) {
+    switch (type) {
+      case 'pie': return 'Gráfico circular';
+      case 'bar': return 'Gráfico de barras';
+      case 'line': return 'Gráfico de líneas';
+      case 'area': return 'Gráfico de área';
+      case 'wordcloud': return 'Nube de palabras';
+      case 'vector_cluster': return 'Clúster vectorial';
+      default: return type;
+    }
+  }
+
+  // Helper: map aggregation type to Spanish label
+  function aggregationLabel(agg: AggregationType) {
+    switch (agg) {
+      case 'count': return 'Contar';
+      case 'sum': return 'Sumar';
+      case 'avg': return 'Promedio';
+      case 'min': return 'Mínimo';
+      case 'max': return 'Máximo';
+      case 'median': return 'Mediana';
+      default: return agg.charAt(0).toUpperCase() + agg.slice(1);
+    }
+  }
+
   if (!isOpen) return null;
 
   async function handleSave() {
@@ -170,7 +196,7 @@ export default function ChartBuilderModal({
       });
 
       if (!response.ok) {
-        throw new Error('Failed to save chart');
+        throw new Error('Falló al guardar el gráfico');
       }
 
       const result = await response.json();
@@ -213,7 +239,7 @@ export default function ChartBuilderModal({
 
       onClose();
     } catch (error) {
-      alert('Error saving chart: ' + (error instanceof Error ? error.message : 'Unknown error'));
+      alert('Error al guardar el gráfico: ' + (error instanceof Error ? error.message : 'Error desconocido'));
     } finally {
       setSaving(false);
     }
@@ -224,7 +250,7 @@ export default function ChartBuilderModal({
       case 1:
         return (
           <div>
-            <h3 className={styles.stepTitle}>Step 1 of 3: Chart Type</h3>
+            <h3 className={styles.stepTitle}>Paso 1 de 3: Tipo de gráfico</h3>
             <div className={styles.chartTypeGrid}>
               {(['pie', 'bar', 'line', 'area', 'wordcloud', 'vector_cluster'] as ChartType[]).map((type) => (
                 <button
@@ -241,7 +267,7 @@ export default function ChartBuilderModal({
                     {type === 'vector_cluster' && '🔮'}
                   </div>
                   <div className={styles.chartTypeName}>
-                    {type === 'vector_cluster' ? 'Vector Cluster' : type.charAt(0).toUpperCase() + type.slice(1) + ' Chart'}
+                    {chartTypeLabel(type)}
                   </div>
                 </button>
               ))}
@@ -253,7 +279,7 @@ export default function ChartBuilderModal({
         if (chartType === 'vector_cluster') {
           return (
             <div>
-              <h3 className={styles.stepTitle}>Step 2 of 3: Configure Clustering</h3>
+              <h3 className={styles.stepTitle}>Paso 2 de 3: Configurar agrupamiento</h3>
               <div className={styles.formGrid}>
                 <div>
                   <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600 }}>
@@ -265,7 +291,7 @@ export default function ChartBuilderModal({
                     style={{ width: '100%', padding: '0.5rem', border: '1px solid #d1d5db', borderRadius: '0.375rem' }}
                   >
                     <option value="">Seleccionar...</option>
-                    <option value="embedding">Embedding (Default)</option>
+                    <option value="embedding">Embedding (Predeterminado)</option>
                   </select>
                 </div>
 
@@ -302,7 +328,7 @@ export default function ChartBuilderModal({
         const chartConfig = getChartConfig(chartType);
         return (
           <div>
-            <h3 className={styles.stepTitle}>Step 2 of 3: Configure Variables</h3>
+            <h3 className={styles.stepTitle}>Paso 2 de 3: Configurar variables</h3>
             <div className={styles.formGrid}>
               {chartConfig.axisRequirements.map((requirement) => {
                 // Hide "Filtrar Por / group_by" field for wordclouds since it's not used
@@ -357,7 +383,7 @@ export default function ChartBuilderModal({
                   >
                     {getAllowedAggregations(chartType).map(agg => (
                       <option key={agg} value={agg}>
-                        {agg.charAt(0).toUpperCase() + agg.slice(1)}
+                        {aggregationLabel(agg)}
                       </option>
                     ))}
                   </select>
@@ -471,18 +497,18 @@ export default function ChartBuilderModal({
       case 3:
         return (
           <div>
-            <h3 className={styles.stepTitle}>Step 3 of 3: Preview & Save</h3>
+            <h3 className={styles.stepTitle}>Paso 3 de 3: Vista previa y guardar</h3>
             <div className={styles.formGrid}>
               <div>
                 <label htmlFor="name" style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600 }}>
-                  Chart Name *
+                  Nombre del gráfico *
                 </label>
                 <input
                   id="name"
                   type="text"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  placeholder="e.g., Sales by Sector"
+                  placeholder="Ej.: Ventas por sector"
                   style={{
                     width: '100%',
                     padding: '0.5rem',
@@ -494,13 +520,13 @@ export default function ChartBuilderModal({
 
               <div>
                 <label htmlFor="description" style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600 }}>
-                  Description (optional)
+                  Descripción (opcional)
                 </label>
                 <textarea
                   id="description"
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
-                  placeholder="Brief description of this chart"
+                  placeholder="Breve descripción de este gráfico"
                   rows={2}
                   style={{
                     width: '100%',
@@ -513,7 +539,7 @@ export default function ChartBuilderModal({
 
               <div>
                 <label htmlFor="chartFilter" style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600 }}>
-                  Chart Filter (optional)
+                  Filtro del gráfico (opcional)
                 </label>
                 <select
                   id="chartFilter"
@@ -562,7 +588,7 @@ export default function ChartBuilderModal({
       <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
         <div className={styles.header}>
           <h2 className={styles.title}>
-            {editChart ? 'Edit Chart' : 'Create New Chart'}
+            {editChart ? 'Editar gráfico' : 'Crear nuevo gráfico'}
           </h2>
           <button onClick={onClose} className={styles.closeButton}>
             ✕
@@ -586,7 +612,7 @@ export default function ChartBuilderModal({
           <div className={styles.buttons}>
             {step > 1 && (
               <button onClick={() => setStep(step - 1)} className="btn-secondary">
-                Previous
+                Anterior
               </button>
             )}
             {step < 3 && (
@@ -599,14 +625,14 @@ export default function ChartBuilderModal({
                   cursor: step === 2 && validationResult?.valid === false ? 'not-allowed' : 'pointer',
                 }}
               >
-                Next
+                Siguiente
               </button>
             )}
             {step === 3 && (
               <button onClick={handleSave} disabled={saving} className="btn-primary">
-                {saving ? 'Saving...' : editChart ? 'Update Chart' : 'Create Chart'}
+                {saving ? 'Guardando...' : editChart ? 'Actualizar gráfico' : 'Crear gráfico'}
               </button>
-            )}
+            )} 
           </div>
         </div>
       </div>

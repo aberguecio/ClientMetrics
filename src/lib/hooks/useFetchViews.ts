@@ -25,7 +25,7 @@ export function useFetchViews(autoFetch: boolean = true) {
       const response = await fetch('/api/views');
 
       if (!response.ok) {
-        throw new Error(`Failed to fetch views: ${response.statusText}`);
+        throw new Error(`Falló al obtener las vistas: ${response.statusText}`);
       }
 
       const result = await response.json();
@@ -34,7 +34,7 @@ export function useFetchViews(autoFetch: boolean = true) {
 
       setViews(Array.isArray(data) ? data : []);
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to fetch views';
+      const errorMessage = err instanceof Error ? err.message : 'Falló al obtener las vistas';
       console.error('[useFetchViews] Error:', err);
       setError(errorMessage);
       setViews([]);

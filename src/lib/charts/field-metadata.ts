@@ -73,7 +73,7 @@ const FIELD_REGISTRY: Record<string, FieldMetadata> = {
 
   closed: {
     key: 'closed',
-    label: 'Estado (Cerrada/Abierta)',
+    label: 'Estado (Cerrada/Fallida)',
     category: FieldCategory.BOOLEAN,
     path: ['closed'],
     isNested: false,

@@ -16,7 +16,7 @@ export interface LoadingStateProps {
 }
 
 export default function LoadingState({
-  message = 'Loading...',
+  message = 'Cargando...',
   size = 'medium',
   fullPage = false
 }: LoadingStateProps) {

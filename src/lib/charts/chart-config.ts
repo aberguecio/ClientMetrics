@@ -241,7 +241,7 @@ const CHART_TYPE_CONFIGS: Record<ChartType, ChartTypeConfig> = {
 
   vector_cluster: {
     chartType: 'vector_cluster',
-    label: 'Vector Cluster',
+    label: 'Clúster vectorial',
     icon: '🔮',
     description: 'Agrupa reuniones similares usando embeddings',
     axisRequirements: [

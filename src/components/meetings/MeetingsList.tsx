@@ -185,7 +185,7 @@ export default function MeetingsList({ meetings, page, totalPages }: MeetingsLis
                       meeting.closed ? styles.closed : styles.open
                     }`}
                   >
-                    {meeting.closed ? 'Cerrada' : 'Abierta'}
+                    {meeting.closed ? 'Cerrada' : 'Fallida'}
                   </span>
                 </td>
                 <td>

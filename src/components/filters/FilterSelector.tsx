@@ -14,20 +14,20 @@ export default function FilterSelector({ selectedFilterIds, onSelect, onDeselect
   const { filters, loading } = useFetchFilters();
 
   if (loading) {
-    return <LoadingState message="Loading filters..." size="small" />;
+    return <LoadingState message="Cargando filtros..." size="small" />;
   }
 
   if (filters.length === 0) {
     return (
       <div className={styles.empty}>
-        No saved filters yet. Create one to get started!
+        No hay filtros guardados aún. ¡Crea uno para comenzar!
       </div>
     );
   }
 
   return (
     <div className={styles.container}>
-      <h4 className={styles.title}>Available Filters</h4>
+      <h4 className={styles.title}>Filtros disponibles</h4>
       <div className={styles.filterList}>
         {filters.map((filter) => {
           const isSelected = selectedFilterIds.includes(filter.id);

@@ -244,14 +244,14 @@ export default function ChartPreview({ chartType, xAxis, yAxis, groupBy, aggrega
   }, []);
 
   if (!isClient) {
-    return <div style={{ padding: '2rem', textAlign: 'center' }}>Loading preview...</div>;
+    return <div style={{ padding: '2rem', textAlign: 'center' }}>Cargando vista previa...</div>;
   }
 
   // Validate required fields based on chart type
   if (!chartType || !yAxis) {
     return (
       <div style={{ padding: '2rem', textAlign: 'center', color: '#6b7280' }}>
-        Please select chart type and variables to see a preview
+        Selecciona el tipo de gráfico y las variables para ver una vista previa
       </div>
     );
   }
@@ -260,7 +260,7 @@ export default function ChartPreview({ chartType, xAxis, yAxis, groupBy, aggrega
   if (chartType === 'pie' && !groupBy) {
     return (
       <div style={{ padding: '2rem', textAlign: 'center', color: '#6b7280' }}>
-        Please select a category for the pie chart
+        Selecciona una categoría para el gráfico circular
       </div>
     );
   }
@@ -268,7 +268,7 @@ export default function ChartPreview({ chartType, xAxis, yAxis, groupBy, aggrega
   if (chartType === 'wordcloud' && !xAxis) {
     return (
       <div style={{ padding: '2rem', textAlign: 'center', color: '#6b7280' }}>
-        Please select a text field for the word cloud
+        Selecciona un campo de texto para la nube de palabras
       </div>
     );
   }
@@ -276,7 +276,7 @@ export default function ChartPreview({ chartType, xAxis, yAxis, groupBy, aggrega
   if ((chartType === 'bar' || chartType === 'line' || chartType === 'area') && !xAxis) {
     return (
       <div style={{ padding: '2rem', textAlign: 'center', color: '#6b7280' }}>
-        Please select X-axis for the chart
+        Selecciona el eje X para el gráfico
       </div>
     );
   }
@@ -301,7 +301,7 @@ export default function ChartPreview({ chartType, xAxis, yAxis, groupBy, aggrega
 
   const mockChart: SavedChart = {
     id: 'preview',
-    name: 'Preview',
+    name: 'Vista previa',
     chart_type: chartType,
     x_axis: xAxis,
     y_axis: yAxis,
@@ -315,11 +315,11 @@ export default function ChartPreview({ chartType, xAxis, yAxis, groupBy, aggrega
   return (
     <div style={{ padding: '1rem', backgroundColor: '#f9fafb', borderRadius: '0.5rem' }}>
       <h4 style={{ marginBottom: '1rem', fontSize: '0.875rem', fontWeight: 600, color: '#374151' }}>
-        Chart Preview
+        Vista previa del gráfico
       </h4>
       <ChartRenderer chart={mockChart} data={sampleData} />
       <p style={{ marginTop: '1rem', fontSize: '0.75rem', color: '#6b7280', textAlign: 'center' }}>
-        Preview with sample data
+        Vista previa con datos de ejemplo
       </p>
     </div>
   );

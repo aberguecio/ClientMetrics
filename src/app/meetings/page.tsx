@@ -1,10 +1,15 @@
 import MeetingsList from '@/components/meetings/MeetingsList';
 import styles from './meetings.module.css';
 
-export default async function MeetingsPage() {
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+interface MeetingsPageProps {
+  searchParams: { page?: string };
+}
 
-  const response = await fetch(`${baseUrl}/api/meetings`, {
+export default async function MeetingsPage({ searchParams }: MeetingsPageProps) {
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+  const page = searchParams.page || '1';
+
+  const response = await fetch(`${baseUrl}/api/meetings?page=${page}`, {
     cache: 'no-store',
   });
 

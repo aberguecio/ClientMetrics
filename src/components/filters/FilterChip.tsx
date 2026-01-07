@@ -13,14 +13,14 @@ export default function FilterChip({ filter, onRemove }: FilterChipProps) {
   const activeFields: string[] = [];
   const data = filter.filter_data;
 
-  if (data.sales_rep) activeFields.push(`Sales Rep: ${data.sales_rep}`);
+  if (data.sales_rep) activeFields.push(`Vendedor: ${data.sales_rep}`);
   if (data.closed !== undefined && data.closed !== null) {
-    activeFields.push(`Closed: ${data.closed ? 'Yes' : 'No'}`);
+    activeFields.push(`Cerrado: ${data.closed ? 'Sí' : 'No'}`);
   }
   if (data.sector) activeFields.push(`Sector: ${data.sector}`);
   if (data.date_from || data.date_to) {
-    const dateRange = `${data.date_from || '...'} to ${data.date_to || '...'}`;
-    activeFields.push(`Date: ${dateRange}`);
+    const dateRange = `${data.date_from || '...'} a ${data.date_to || '...'}`;
+    activeFields.push(`Fecha: ${dateRange}`);
   }
 
   return (
@@ -32,7 +32,7 @@ export default function FilterChip({ filter, onRemove }: FilterChipProps) {
         )}
       </div>
       {onRemove && (
-        <button onClick={onRemove} className={styles.removeButton} title="Remove filter">
+        <button onClick={onRemove} className={styles.removeButton} title="Eliminar filtro">
           ✕
         </button>
       )}

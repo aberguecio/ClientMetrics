@@ -25,7 +25,7 @@ export function useFetchCharts(autoFetch: boolean = true) {
       const response = await fetch('/api/charts');
 
       if (!response.ok) {
-        throw new Error(`Failed to fetch charts: ${response.statusText}`);
+        throw new Error(`Falló al obtener los gráficos: ${response.statusText}`);
       }
 
       const result = await response.json();
@@ -34,7 +34,7 @@ export function useFetchCharts(autoFetch: boolean = true) {
 
       setCharts(Array.isArray(data) ? data : []);
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to fetch charts';
+      const errorMessage = err instanceof Error ? err.message : 'Falló al obtener los gráficos';
       console.error('[useFetchCharts] Error:', err);
       setError(errorMessage);
       setCharts([]);

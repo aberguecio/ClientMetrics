@@ -52,7 +52,7 @@ export default function ViewSelector({
   return (
     <div className={styles.container}>
       <label htmlFor="view-selector" className={styles.label}>
-        Select View:
+        Seleccionar vista:
       </label>
       <select
         id="view-selector"
@@ -61,13 +61,13 @@ export default function ViewSelector({
         disabled={isDisabled}
         className={styles.select}
       >
-        <option value="">Select View...</option>
+        <option value="">Seleccionar vista...</option>
         {views.map((view) => (
           <option key={view.id} value={view.id}>
-            {view.name} {view.is_default ? '(Default)' : ''}
+            {view.name} {view.is_default ? '(Predeterminado)' : ''}
           </option>
         ))}
-        {showCreateButton && !inPlaceMode && <option value="create">+ Create New View</option>}
+        {showCreateButton && !inPlaceMode && <option value="create">+ Crear nueva vista</option>}
       </select>
     </div>
   );

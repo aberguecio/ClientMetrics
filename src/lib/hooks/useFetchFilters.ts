@@ -25,7 +25,7 @@ export function useFetchFilters(autoFetch: boolean = true) {
       const response = await fetch('/api/filters');
 
       if (!response.ok) {
-        throw new Error(`Failed to fetch filters: ${response.statusText}`);
+        throw new Error(`Falló al obtener los filtros: ${response.statusText}`);
       }
 
       const result = await response.json();
@@ -34,7 +34,7 @@ export function useFetchFilters(autoFetch: boolean = true) {
 
       setFilters(Array.isArray(data) ? data : []);
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to fetch filters';
+      const errorMessage = err instanceof Error ? err.message : 'Falló al obtener los filtros';
       console.error('[useFetchFilters] Error:', err);
       setError(errorMessage);
       setFilters([]);

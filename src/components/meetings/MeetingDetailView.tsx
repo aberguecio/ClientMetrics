@@ -37,7 +37,7 @@ export default function MeetingDetailView({ meeting }: MeetingDetailViewProps) {
             meeting.closed ? styles.closed : styles.open
           }`}
         >
-          {meeting.closed ? 'Cerrada' : 'Abierta'}
+          {meeting.closed ? 'Cerrada' : 'Fallida'}
         </span>
       </div>
 
@@ -185,7 +185,7 @@ export default function MeetingDetailView({ meeting }: MeetingDetailViewProps) {
           <div className={styles.detailsGrid}>
             {analysis.pain_points && analysis.pain_points.length > 0 && (
               <div className={styles.detailCard}>
-                <h3>Pain Points</h3>
+                <h3>Puntos de dolor</h3>
                 <ul>
                   {analysis.pain_points.map((point, index) => (
                     <li key={index}>{point}</li>

@@ -126,7 +126,7 @@ export default function FilterBuilder({ isOpen, onClose, editFilter, onSave }: F
 
       onClose();
     } catch (error) {
-      alert('Error al guardar el filtro: ' + (error instanceof Error ? error.message : 'Unknown error'));
+      alert('Error al guardar el filtro: ' + (error instanceof Error ? error.message : 'Error desconocido'));
     } finally {
       setSaving(false);
     }
@@ -137,7 +137,7 @@ export default function FilterBuilder({ isOpen, onClose, editFilter, onSave }: F
       <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
         <div className={styles.header}>
           <h2 className={styles.title}>
-            {editFilter ? 'Edit Filter' : 'Create New Filter'}
+            {editFilter ? 'Editar filtro' : 'Crear nuevo filtro'}
           </h2>
           <button onClick={onClose} className={styles.closeButton}>
             ✕
@@ -309,10 +309,10 @@ export default function FilterBuilder({ isOpen, onClose, editFilter, onSave }: F
 
         <div className={styles.footer}>
           <button onClick={onClose} className="btn-secondary">
-            Cancel
+            Cancelar
           </button>
           <button onClick={handleSave} disabled={saving} className="btn-primary">
-            {saving ? 'Saving...' : editFilter ? 'Update Filter' : 'Create Filter'}
+            {saving ? 'Guardando...' : editFilter ? 'Actualizar filtro' : 'Crear filtro'}
           </button>
         </div>
       </div>

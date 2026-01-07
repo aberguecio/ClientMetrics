@@ -38,7 +38,7 @@ export default function ChartCard({ chart, activeFilterIds, chartFilterId, onEdi
       });
 
       if (!response.ok) {
-        throw new Error('Failed to fetch chart data');
+        throw new Error('Falló al obtener datos del gráfico');
       }
 
       const result = await response.json();
@@ -46,7 +46,7 @@ export default function ChartCard({ chart, activeFilterIds, chartFilterId, onEdi
       const apiData = result.data || result;
       setData(apiData.data);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Unknown error');
+      setError(err instanceof Error ? err.message : 'Error desconocido');
     } finally {
       setLoading(false);
     }
@@ -61,12 +61,12 @@ export default function ChartCard({ chart, activeFilterIds, chartFilterId, onEdi
         </div>
         <div className={styles.actions}>
           {onEdit && (
-            <button onClick={onEdit} className="btn-icon" title="Edit chart">
+            <button onClick={onEdit} className="btn-icon" title="Editar gráfico">
               ✏️
             </button>
           )}
           {onDelete && (
-            <button onClick={onDelete} className="btn-icon" title="Delete chart">
+            <button onClick={onDelete} className="btn-icon" title="Eliminar gráfico">
               🗑️
             </button>
           )}
@@ -74,10 +74,10 @@ export default function ChartCard({ chart, activeFilterIds, chartFilterId, onEdi
       </div>
 
       <div className={styles.content}>
-        {loading && <div className={styles.loading}>Loading chart data...</div>}
+        {loading && <div className={styles.loading}>Cargando datos del gráfico...</div>}
         {error && <div className={styles.error}>Error: {error}</div>}
         {!loading && !error && data.length === 0 && (
-          <div className={styles.noData}>No data available for this chart</div>
+          <div className={styles.noData}>No hay datos disponibles para este gráfico</div>
         )}
         {!loading && !error && data.length > 0 && (
           <ChartRenderer chart={chart} data={data} />

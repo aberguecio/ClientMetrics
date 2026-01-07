@@ -37,11 +37,11 @@ export default function AddChartToView({ viewId, onChartAdded }: AddChartToViewP
         setIsOpen(false);
         onChartAdded();
       } else {
-        alert('Failed to add chart to view');
+        alert('Falló al agregar el gráfico a la vista');
       }
     } catch (error) {
       console.error('Error adding chart:', error);
-      alert('Error adding chart to view');
+      alert('Error al agregar el gráfico a la vista');
     } finally {
       setAdding(false);
     }
@@ -50,22 +50,22 @@ export default function AddChartToView({ viewId, onChartAdded }: AddChartToViewP
   return (
     <>
       <button onClick={handleOpen} className={styles.addButton}>
-        + Add Chart to View
+        + Agregar gráfico a la vista
       </button>
 
       <Modal
         isOpen={isOpen}
         onClose={() => setIsOpen(false)}
-        title="Add Chart to View"
+        title="Agregar gráfico a la vista"
         maxWidth="600px"
       >
-        {loading && <LoadingState message="Loading charts..." />}
+        {loading && <LoadingState message="Cargando gráficos..." />}
 
         {!loading && charts.length === 0 && (
           <div className={styles.empty}>
-            <p>No charts available.</p>
+            <p>No hay gráficos disponibles.</p>
             <p className={styles.emptyHint}>
-              Create charts first on the Charts page.
+              Crea primero los gráficos en la página de Gráficos.
             </p>
           </div>
         )}
@@ -88,7 +88,7 @@ export default function AddChartToView({ viewId, onChartAdded }: AddChartToViewP
                   disabled={adding}
                   className={styles.selectButton}
                 >
-                  {adding ? 'Adding...' : 'Add'}
+                  {adding ? 'Agregando...' : 'Agregar'}
                 </button>
               </div>
             ))}

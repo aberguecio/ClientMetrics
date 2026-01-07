@@ -19,18 +19,18 @@ export default function ViewCard({ view, onEdit, onDelete }: ViewCardProps) {
             <Link href={`/views/${view.id}`} className={styles.titleLink}>
               {view.name}
             </Link>
-            {view.is_default && <span className={styles.badge}>Default</span>}
+            {view.is_default && <span className={styles.badge}>Predeterminada</span>}
           </h3>
           {view.objective && <p className={styles.objective}>{view.objective}</p>}
         </div>
         <div className={styles.actions}>
           {onEdit && (
-            <button onClick={onEdit} className="btn-icon" title="Edit view">
+            <button onClick={onEdit} className="btn-icon" title="Editar vista">
               ✏️
             </button>
           )}
           {onDelete && (
-            <button onClick={onDelete} className="btn-icon" title="Delete view">
+            <button onClick={onDelete} className="btn-icon" title="Eliminar vista">
               🗑️
             </button>
           )}
@@ -39,10 +39,10 @@ export default function ViewCard({ view, onEdit, onDelete }: ViewCardProps) {
 
       <div className={styles.footer}>
         <span className={styles.date}>
-          Created {new Date(view.created_at).toLocaleDateString()}
+          Creada {new Date(view.created_at).toLocaleDateString()}
         </span>
         <Link href={`/views/${view.id}`} className={styles.viewLink}>
-          View Dashboard →
+          Ver panel →
         </Link>
       </div>
     </div>
