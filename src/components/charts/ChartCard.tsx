@@ -61,13 +61,13 @@ export default function ChartCard({ chart, activeFilterIds, chartFilterId, onEdi
         </div>
         <div className={styles.actions}>
           {onEdit && (
-            <button onClick={onEdit} className="btn-icon" title="Editar gráfico">
-              ✏️
+            <button onClick={onEdit} className="btn-icon" title="Editar gráfico" aria-label="Editar gráfico">
+              <img src="/icons/edit.webp" alt="Editar" className={styles.icon} />
             </button>
           )}
           {onDelete && (
-            <button onClick={onDelete} className="btn-icon" title="Eliminar gráfico">
-              🗑️
+            <button onClick={onDelete} className="btn-icon" title="Eliminar gráfico" aria-label="Eliminar gráfico">
+              <img src="/icons/delete.webp" alt="Eliminar" className={styles.icon} />
             </button>
           )}
         </div>

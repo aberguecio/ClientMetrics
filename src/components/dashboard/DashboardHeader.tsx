@@ -70,11 +70,11 @@ export default function DashboardHeader({
         <div className={styles.bottomRow}>
           <div className={styles.viewInfo}>
             <h1 className={styles.viewName}>{activeView.name}</h1>
-            <button onClick={onEditView} className="btn-icon" title="Editar Vista">
-              ✏️
+            <button onClick={onEditView} className="btn-icon" title="Editar Vista" aria-label="Editar Vista">
+              <img src="/icons/edit.webp" alt="Editar Vista" className={styles.icon} />
             </button>
-            <button onClick={onDeleteView} className="btn-icon" title="Eliminar Vista">
-              🗑️
+            <button onClick={onDeleteView} className="btn-icon" title="Eliminar Vista" aria-label="Eliminar Vista">
+              <img src="/icons/delete.webp" alt="Eliminar Vista" className={styles.icon} />
             </button>
           </div>
           <button onClick={onCreateChart} className="btn-success">

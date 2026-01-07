@@ -8,9 +8,9 @@ export default function UploadPage() {
       <h1>Subir Archivo CSV</h1>
 
       <div className={styles.uploadContainer}>
-        <div className={styles.instructions}>
-          <h2>Instrucciones</h2>
-          <ul>
+        <div className={styles.block}>
+          <h2 className={styles.blockTitle}>Instrucciones</h2>
+          <ul className={styles.instructionsList}>
             <li>El archivo debe ser un CSV con las siguientes columnas:</li>
             <li className={styles.columnList}>
               <code>Nombre</code>, <code>Correo Electronico</code>, <code>Numero de Telefono</code>,
@@ -23,10 +23,10 @@ export default function UploadPage() {
         </div>
 
         <UploadForm />
-      </div>
 
-      {/* JobProcessor para monitorear el progreso de los jobs */}
-      <JobProcessor />
+        {/* JobProcessor para monitorear el progreso de los jobs */}
+        <JobProcessor />
+      </div>
     </div>
   );
 }

@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import styles from './UploadForm.module.css';
+import uploadStyles from '../../app/upload/upload.module.css';
 
 export default function UploadForm() {
   const router = useRouter();
@@ -64,7 +65,7 @@ export default function UploadForm() {
   };
 
   return (
-    <div className={styles.formContainer}>
+    <div className={uploadStyles.block}>
       <form onSubmit={handleSubmit} className={styles.form}>
         <div className={styles.inputGroup}>
           <label htmlFor="file-input" className={styles.label}>

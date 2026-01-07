@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import styles from './JobProcessor.module.css';
+import uploadStyles from '../../app/upload/upload.module.css';
 
 interface JobStats {
   pending: number;
@@ -44,7 +45,7 @@ export default function JobProcessor() {
 
   if (loading) {
     return (
-      <div className={styles.container}>
+      <div className={uploadStyles.block}>
         <div className={styles.loading}>Cargando estadísticas...</div>
       </div>
     );
@@ -59,10 +60,10 @@ export default function JobProcessor() {
   const isProcessing = stats.pending > 0 || stats.processing > 0;
 
   return (
-    <div className={styles.container}>
+    <div className={uploadStyles.block}>
       <div className={styles.header}>
-        <h3 className={styles.title}>Procesamiento de IA</h3>
-        <p className={styles.subtitle}>Actualización automática cada 5 segundos</p>
+        <h2 className={styles.title}>Procesamiento de IA</h2>
+        <p className={styles.subtitle}>Actualización automática</p>
       </div>
 
       {isProcessing && (

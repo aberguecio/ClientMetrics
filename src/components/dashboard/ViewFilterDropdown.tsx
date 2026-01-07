@@ -88,8 +88,9 @@ export default function ViewFilterDropdown({
                       }}
                       className={styles.actionButton}
                       title="Editar filtro"
+                      aria-label="Editar filtro"
                     >
-                      ✏️
+                      <img src="/icons/edit.webp" alt="Editar filtro" className={styles.icon} />
                     </button>
                     <button
                       onClick={(e) => {
@@ -98,8 +99,9 @@ export default function ViewFilterDropdown({
                       }}
                       className={styles.actionButton}
                       title="Eliminar filtro"
+                      aria-label="Eliminar filtro"
                     >
-                      🗑️
+                      <img src="/icons/delete.webp" alt="Eliminar filtro" className={styles.icon} />
                     </button>
                   </div>
                 </label>

@@ -37,6 +37,13 @@
 
 /* Button styles now use global classes: .btn-icon, .btn-success, .btn-neutral, .btn-featured */
 
+.icon {
+  width: 25px;
+  height: 25px;
+  display: inline-block;
+  object-fit: contain;
+}
+
 /* Responsive */
 @media (max-width: 768px) {
   .viewName {

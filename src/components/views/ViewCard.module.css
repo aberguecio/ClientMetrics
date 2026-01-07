@@ -58,6 +58,13 @@
 
 /* Action button styles now use global class: .btn-icon */
 
+.icon {
+  width: 20px;
+  height: 20px;
+  display: inline-block;
+  object-fit: contain;
+}
+
 .footer {
   display: flex;
   justify-content: space-between;

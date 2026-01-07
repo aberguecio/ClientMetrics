@@ -124,6 +124,13 @@
   transform: scale(1.2);
 }
 
+.icon {
+  width: 18px;
+  height: 18px;
+  display: inline-block;
+  object-fit: contain;
+}
+
 .emptyMessage {
   padding: 1rem;
   text-align: center;

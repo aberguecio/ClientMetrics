@@ -3,25 +3,26 @@
   margin: 0 auto;
 }
 
-.instructions {
+/* Estilo compartido para todos los bloques de la página upload */
+.block {
   background-color: var(--bg-primary);
   border-radius: 0.5rem;
   box-shadow: var(--shadow);
-  padding: 1.5rem;
+  padding: 2rem;
   margin-bottom: 2rem;
 }
 
-.instructions h2 {
+.blockTitle {
   font-size: 1.25rem;
   margin-bottom: 1rem;
 }
 
-.instructions ul {
+.instructionsList {
   list-style: disc;
   padding-left: 1.5rem;
 }
 
-.instructions li {
+.instructionsList li {
   margin-bottom: 0.5rem;
   color: var(--text-secondary);
 }
