@@ -113,7 +113,7 @@ export default function ChartBuilderModal({
   }
 
   // Helper: map aggregation type to Spanish label
-  function aggregationLabel(agg: AggregationType) {
+  function aggregationLabel(agg: AggregationType): string {
     switch (agg) {
       case 'count': return 'Contar';
       case 'sum': return 'Sumar';
@@ -121,7 +121,6 @@ export default function ChartBuilderModal({
       case 'min': return 'Mínimo';
       case 'max': return 'Máximo';
       case 'median': return 'Mediana';
-      default: return agg.charAt(0).toUpperCase() + agg.slice(1);
     }
   }
 
